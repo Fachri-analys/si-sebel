@@ -4,8 +4,7 @@ Provides distributed caching with Redis for improved performance.
 """
 
 import json
-from typing import Optional, Any, Union
-from datetime import timedelta
+from typing import Any, Optional
 
 try:
     import redis

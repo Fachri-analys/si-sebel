@@ -7,7 +7,7 @@ import re
 import hashlib
 import hmac
 import os
-from typing import Optional, List, Tuple
+from typing import Optional, Tuple
 from .logger import Logger
 from .exceptions import SiSebelException
 

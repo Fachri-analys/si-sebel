@@ -87,7 +87,6 @@ class HealthChecker:
         Returns:
             Health status dictionary
         """
-        import time
         from datetime import datetime
 
         self.last_check = datetime.now().isoformat()

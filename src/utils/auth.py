@@ -6,8 +6,7 @@ Provides secure access control for administrative functions.
 import hashlib
 import hmac
 import secrets
-import time
-from typing import Optional, Dict, Any, List
+from typing import Any, Dict, Optional
 from datetime import datetime, timedelta
 
 from .logger import Logger
