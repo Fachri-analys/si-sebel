@@ -21,6 +21,7 @@ from database.models import (
 )
 from utils.logger import Logger
 from utils.exceptions import MessageProcessingError
+from utils.metrics import metrics
 from utils.security import (
     InputValidator,
     OutputEncoder,
@@ -163,9 +164,11 @@ class MessageProcessor:
         start_time = datetime.now()
 
         try:
+            metrics.increment("messages.received")
             # Validate input (security check)
             is_valid, validation_result = self.input_validator.validate_message(message)
             if not is_valid:
+                metrics.increment("messages.rejected")
                 self.security_logger.log_invalid_input(message, validation_result)
                 self.logger.warning(
                     f"Invalid input from {phone_number}: {validation_result}"
@@ -176,6 +179,7 @@ class MessageProcessor:
             cleaned_message = self._clean_message(message)
 
             if not cleaned_message:
+                metrics.increment("messages.empty")
                 return self._get_empty_message_response()
 
             # Detect intent
@@ -209,10 +213,12 @@ class MessageProcessor:
                 intent_detected=intent,
                 response_time_ms=response_time_ms,
             )
+            metrics.increment("messages.processed")
 
             return safe_response
 
         except Exception as e:
+            metrics.increment("messages.errors")
             self.logger.error(f"Error processing message: {e}")
             raise MessageProcessingError(f"Failed to process message: {e}")
 

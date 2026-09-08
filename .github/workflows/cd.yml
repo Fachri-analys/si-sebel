@@ -39,6 +39,8 @@ jobs:
           docker-compose.yml \
           requirements.txt \
           requirements.lock \
+          scripts/ \
+          docs/ \
           run_bot.py \
           README.md \
           config/.env.example

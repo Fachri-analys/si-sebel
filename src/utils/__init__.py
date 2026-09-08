@@ -35,6 +35,7 @@ from .security_config import (
     SecurityHeaders,
     get_security_best_practices,
 )
+from .metrics import Metrics, metrics
 from .auth import (
     AuthenticationManager,
     AdminUser,
@@ -84,4 +85,6 @@ __all__ = [
     "AuthenticationError",
     "AuthorizationError",
     "get_authentication_manager",
+    "Metrics",
+    "metrics",
 ]

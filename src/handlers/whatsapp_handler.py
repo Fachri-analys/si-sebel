@@ -16,6 +16,7 @@ except ImportError:
 from utils.logger import Logger
 from utils.exceptions import WhatsAppConnectionError
 from utils.security import InputValidator
+from utils.metrics import metrics
 
 
 class WhatsAppHandler:
@@ -65,9 +66,11 @@ class WhatsAppHandler:
                 raise WhatsAppConnectionError("Client has no start/connect")
 
             self.is_connected = True
+            metrics.increment("whatsapp.connect.success")
             self.logger.info("✓ WhatsApp connected!")
 
         except Exception as e:
+            metrics.increment("whatsapp.connect.errors")
             self.logger.error("Connect error: %s", e)
             raise WhatsAppConnectionError("WhatsApp connection failed") from e
 
@@ -145,8 +148,10 @@ class WhatsAppHandler:
             else:
                 return False
             self.logger.info(f"✅ Sent to {phone}")
+            metrics.increment("whatsapp.send.success")
             return True
         except Exception as e:
+            metrics.increment("whatsapp.send.errors")
             self.logger.error("Send failed: %s", e)
             return False
 

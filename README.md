@@ -23,7 +23,7 @@ Latest local validation:
 | --- | --- |
 | Python compile check | Passed |
 | Automated tests | 9 passed |
-| Coverage gate | 32.05% (minimum 32%) |
+| Coverage gate | 32.57% (minimum 32%) |
 | Docker build | Not run locally; Docker unavailable |
 | WhatsApp provider E2E | Pending staging credentials |
 
@@ -109,8 +109,14 @@ python -m compileall src scripts
 python -m pytest tests -q --cov=src --cov-report=term-missing
 python -m black --check src tests scripts
 python -m flake8 src tests scripts --ignore=C901,E402,E501,E704,F401,F811,W291,W503
+python scripts/validate_lock.py
+python scripts/restore_smoke.py --database "$TEMP/sisebel.db" --backup "$TEMP/sisebel-backup.db"
 python scripts/healthcheck.py --database sisebel.db --auth-folder piwapp_auth
+pip-audit -r requirements.lock
 ```
+
+The healthcheck also supports `--json` for machine-readable readiness output
+with sanitized operational counters.
 
 Database administration:
 

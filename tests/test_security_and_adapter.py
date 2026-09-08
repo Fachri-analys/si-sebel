@@ -1,6 +1,9 @@
 import asyncio
 
+import pytest
+
 from handlers.whatsapp_handler import WhatsAppHandler
+from utils.metrics import Metrics
 from utils.security import InputValidator, RateLimiterSecurity
 
 
@@ -33,3 +36,13 @@ def test_send_message_returns_false_when_disconnected():
     handler = WhatsAppHandler.__new__(WhatsAppHandler)
     handler.is_connected = False
     assert asyncio.run(handler.send_message("081234567890", "test")) is False
+
+
+def test_metrics_snapshot_is_copy_and_rejects_invalid_values():
+    registry = Metrics()
+    registry.increment("messages.received", 2)
+    snapshot = registry.snapshot()
+    snapshot["messages.received"] = 99
+    assert registry.snapshot()["messages.received"] == 2
+    with pytest.raises(ValueError):
+        registry.increment("", 1)

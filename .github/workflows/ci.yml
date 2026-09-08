@@ -37,6 +37,7 @@ jobs:
         pip install -r requirements.lock
         pip install pytest pytest-asyncio pytest-cov black flake8 mypy
         pip check
+        python scripts/validate_lock.py
     
     - name: Lint with flake8
       run: |
@@ -56,6 +57,10 @@ jobs:
     - name: Run tests
       run: |
         pytest tests/ -v --cov=src/ --cov-report=xml --cov-report=html --cov-fail-under=32
+    - name: Restore smoke test
+      run: |
+        python scripts/restore_smoke.py --database "$RUNNER_TEMP/sisebel.db" \
+          --backup "$RUNNER_TEMP/sisebel-backup.db"
     
     - name: Upload coverage reports
       uses: codecov/codecov-action@v3
@@ -82,11 +87,14 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install safety bandit
+        pip install safety bandit pip-audit
     
     - name: Run safety check
       run: |
         safety check --file requirements.lock
+    - name: Audit installed dependencies
+      run: |
+        pip-audit -r requirements.lock
     
     - name: Run bandit security linter
       run: |

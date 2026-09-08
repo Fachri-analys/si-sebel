@@ -17,12 +17,15 @@ Create and verify a backup before deployments:
 python scripts/db_admin.py backup --path /app/data/sisebel.db \
   --output /backup/sisebel-$(date +%Y%m%d-%H%M%S).db
 python scripts/db_admin.py verify --path /backup/sisebel-latest.db
+python scripts/restore_smoke.py --database /app/data/sisebel.db \
+  --backup /backup/restore-smoke.db
 ```
 
 To restore, stop the bot, preserve the current database, replace the database
 with a verified backup, and start the bot again. Run the healthcheck and a
 read-only FAQ smoke test before accepting traffic. Keep backups on storage
 separate from the application host and retain multiple generations.
+The restore smoke test is also executed in CI against a temporary database.
 
 ## Rollback
 
