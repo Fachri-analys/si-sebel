@@ -17,7 +17,7 @@ from database.models import (
     FacilitiesModel,
     ExtracurricularModel,
     PPDBInfoModel,
-    ConversationLogModel
+    ConversationLogModel,
 )
 from utils.logger import Logger
 from utils.exceptions import MessageProcessingError
@@ -27,12 +27,13 @@ from utils.security import (
     SecurityLogger,
     get_input_validator,
     get_output_encoder,
-    get_security_logger
+    get_security_logger,
 )
 
 
 class IntentType:
     """Intent types for message classification."""
+
     MENU = "menu"
     SCHOOL_INFO = "school_info"
     JURUSAN = "jurusan"
@@ -59,7 +60,7 @@ class MessageProcessor:
         extracurricular: ExtracurricularModel,
         ppdb: PPDBInfoModel,
         conversation_log: ConversationLogModel,
-        logger: Optional[Logger] = None
+        logger: Optional[Logger] = None,
     ):
         """
         Initialize message processor.
@@ -85,15 +86,15 @@ class MessageProcessor:
         self.extracurricular = extracurricular
         self.ppdb = ppdb
         self.conversation_log = conversation_log
-        
+
         self.logger = logger or Logger.get_logger("message_processor")
-        
+
         # Initialize security components
         self.input_validator = get_input_validator(self.logger)
         self.output_encoder = get_output_encoder()
         self.security_logger = get_security_logger(self.logger)
         self.context: Dict[str, Dict[str, Any]] = {}
-        
+
         # Initialize intent patterns
         self._init_intent_patterns()
 
@@ -104,50 +105,48 @@ class MessageProcessor:
                 r"^(menu|help|\?|halo|hai|hi|selamat|pagi|siang|sore|malam)",
                 r"^menu$",
                 r"^help$",
-                r"^\?$"
+                r"^\?$",
             ],
             IntentType.SCHOOL_INFO: [
                 r"(info|informasi|tentang|sekolah|alamat|lokasi|visi|misi|sejarah)",
                 r"(jam|operasional|buka)",
-                r"(telepon|telp|hubungi|kontak)"
+                r"(telepon|telp|hubungi|kontak)",
             ],
             IntentType.JURUSAN: [
                 r"(jurusan|program|kompetensi|keahlian|prodi|major)",
-                r"(tkj|tkr|rpl|akuntansi|perkantoran)"
+                r"(tkj|tkr|rpl|akuntansi|perkantoran)",
             ],
             IntentType.PPDB: [
                 r"(ppdb|pendaftaran|daftar|masuk|masuk sekolah)",
                 r"(syarat|persyaratan|dokumen|berkas)",
                 r"(biaya|spp|uang|bayar)",
-                r"(jadwal|kapan|waktu)"
+                r"(jadwal|kapan|waktu)",
             ],
             IntentType.CALENDAR: [
                 r"(kalender|jadwal|agenda|kegiatan|event)",
                 r"(ujian|exam|test)",
-                r"(libur|holiday|cuti)"
+                r"(libur|holiday|cuti)",
             ],
             IntentType.CONTACT: [
                 r"(kontak|hubungi|telepon|telp|email)",
                 r"(tu|tata usaha)",
                 r"(bk|bimbingan konseling)",
-                r"(humas|kesiswaan)"
+                r"(humas|kesiswaan)",
             ],
             IntentType.FACILITIES: [
                 r"(fasilitas|sarana|prasarana|lab|laboratorium)",
-                r"(kantin|perpustakaan|masjid|lapangan)"
+                r"(kantin|perpustakaan|masjid|lapangan)",
             ],
             IntentType.EXTRACURRICULAR: [
                 r"(ekskul|ekstrakurikuler|organisasi|osis)",
-                r"(pramuka|paskibra|basket|futsal|kir)"
-            ]
+                r"(pramuka|paskibra|basket|futsal|kir)",
+            ],
         }
-        self.intent_patterns[IntentType.FACILITIES].append(r"(fasilitas|sarana|prasarana)")
+        self.intent_patterns[IntentType.FACILITIES].append(
+            r"(fasilitas|sarana|prasarana)"
+        )
 
-    async def process_message(
-        self,
-        phone_number: str,
-        message: str
-    ) -> str:
+    async def process_message(self, phone_number: str, message: str) -> str:
         """
         Process incoming message and generate response.
 
@@ -162,24 +161,26 @@ class MessageProcessor:
             MessageProcessingError: If processing fails
         """
         start_time = datetime.now()
-        
+
         try:
             # Validate input (security check)
             is_valid, validation_result = self.input_validator.validate_message(message)
             if not is_valid:
                 self.security_logger.log_invalid_input(message, validation_result)
-                self.logger.warning(f"Invalid input from {phone_number}: {validation_result}")
+                self.logger.warning(
+                    f"Invalid input from {phone_number}: {validation_result}"
+                )
                 return f"⚠️ {validation_result}. Mohon kirim pesan yang valid."
-            
+
             # Clean message
             cleaned_message = self._clean_message(message)
-            
+
             if not cleaned_message:
                 return self._get_empty_message_response()
-            
+
             # Detect intent
             intent = self._detect_intent(cleaned_message)
-            
+
             sender_hash = self.input_validator.hash_phone_number(phone_number)
             self.logger.info(
                 "Intent detected intent=%s sender_hash=%s message_length=%d",
@@ -187,30 +188,30 @@ class MessageProcessor:
                 sender_hash,
                 len(cleaned_message),
             )
-            
+
             # Generate response based on intent
             response = await self._generate_response(intent, cleaned_message)
             self.context.setdefault(phone_number, {})["intent"] = intent
             if intent == IntentType.JURUSAN:
                 self.context[phone_number]["last_jurusan_query"] = cleaned_message
-            
+
             # Encode output for security
             safe_response = self.output_encoder.encode_for_whatsapp(response)
-            
+
             # Calculate response time
             response_time_ms = int((datetime.now() - start_time).total_seconds() * 1000)
-            
+
             # Log conversation
             await self._log_conversation(
                 phone_number=phone_number,
                 message=cleaned_message,
                 response=safe_response,
                 intent_detected=intent,
-                response_time_ms=response_time_ms
+                response_time_ms=response_time_ms,
             )
-            
+
             return safe_response
-            
+
         except Exception as e:
             self.logger.error(f"Error processing message: {e}")
             raise MessageProcessingError(f"Failed to process message: {e}")
@@ -227,10 +228,10 @@ class MessageProcessor:
         """
         if not message:
             return ""
-        
+
         # Remove extra whitespace
         cleaned = " ".join(message.split())
-        
+
         # Convert to lowercase for processing
         return cleaned.lower().strip()
 
@@ -272,10 +273,15 @@ class MessageProcessor:
             IntentType.FAQ,
         )
         for intent in priority:
-            if any(re.search(pattern, message, re.IGNORECASE)
-                   for pattern in self.intent_patterns.get(intent, [])):
+            if any(
+                re.search(pattern, message, re.IGNORECASE)
+                for pattern in self.intent_patterns.get(intent, [])
+            ):
                 return intent
-        if "?" in message or any(word in message.split() for word in ("tanya", "berapa", "apakah", "bagaimana")):
+        if "?" in message or any(
+            word in message.split()
+            for word in ("tanya", "berapa", "apakah", "bagaimana")
+        ):
             return IntentType.FAQ
         return IntentType.UNKNOWN
 
@@ -292,31 +298,31 @@ class MessageProcessor:
         """
         if intent == IntentType.MENU:
             return self._get_menu_response()
-        
+
         elif intent == IntentType.SCHOOL_INFO:
             return await self._get_school_info_response(message)
-        
+
         elif intent == IntentType.JURUSAN:
             return await self._get_jurusan_response(message)
-        
+
         elif intent == IntentType.PPDB:
             return await self._get_ppdb_response(message)
-        
+
         elif intent == IntentType.CALENDAR:
             return await self._get_calendar_response(message)
-        
+
         elif intent == IntentType.CONTACT:
             return await self._get_contact_response(message)
-        
+
         elif intent == IntentType.FACILITIES:
             return await self._get_facilities_response()
-        
+
         elif intent == IntentType.EXTRACURRICULAR:
             return await self._get_extracurricular_response()
-        
+
         elif intent == IntentType.FAQ:
             return await self._get_faq_response(message)
-        
+
         else:
             return self._get_unknown_response()
 
@@ -341,10 +347,10 @@ class MessageProcessor:
         try:
             # Get general school info
             info = self.school_info.get_info()
-            
+
             if not info:
                 return "Maaf, informasi sekolah belum tersedia."
-            
+
             response = (
                 "🏫 *INFORMASI SEKOLAH*\n\n"
                 f"Nama: {info.get('nama', 'N/A')}\n"
@@ -356,9 +362,9 @@ class MessageProcessor:
                 f"*Misi:*\n{info.get('misi', 'N/A')}\n\n"
                 f"*Sejarah:*\n{info.get('sejarah', 'N/A')}"
             )
-            
+
             return response
-            
+
         except Exception as e:
             self.logger.error(f"Error getting school info: {e}")
             return "Maaf, terjadi kesalahan saat mengambil informasi sekolah."
@@ -368,10 +374,10 @@ class MessageProcessor:
         try:
             # Check if user is asking for specific jurusan
             jurusan_list = self.jurusan.get_all_jurusan()
-            
+
             if not jurusan_list:
                 return "Maaf, informasi jurusan belum tersedia."
-            
+
             # If message contains specific jurusan name
             for jurusan in jurusan_list:
                 aliases = {
@@ -380,18 +386,18 @@ class MessageProcessor:
                 }
                 if any(alias and alias in message for alias in aliases):
                     return self._format_jurusan_detail(jurusan)
-            
+
             # Otherwise, show list
             response = "📚 *JURUSAN & PROGRAM KEAHLIAN*\n\n"
-            
+
             for idx, jurusan in enumerate(jurusan_list, 1):
                 response += f"{idx}. {jurusan['nama']}\n"
                 response += f"   {jurusan['deskripsi'][:100]}...\n\n"
-            
+
             response += "Ketik nama jurusan untuk detail lebih lanjut."
-            
+
             return response
-            
+
         except Exception as e:
             self.logger.error(f"Error getting jurusan info: {e}")
             return "Maaf, terjadi kesalahan saat mengambil informasi jurusan."
@@ -410,10 +416,10 @@ class MessageProcessor:
         """Generate PPDB response."""
         try:
             ppdb_info = self.ppdb.get_ppdb_info()
-            
+
             if not ppdb_info:
                 return "Maaf, informasi PPDB belum tersedia."
-            
+
             response = (
                 "📝 *INFORMASI PPDB*\n\n"
                 f"Tahun Ajaran: {ppdb_info.get('tahun_ajaran', 'N/A')}\n"
@@ -426,9 +432,9 @@ class MessageProcessor:
                 f"{ppdb_info.get('biaya_operasional', 'N/A')}\n"
                 f"{ppdb_info.get('biaya_spp', 'N/A')}"
             )
-            
+
             return response
-            
+
         except Exception as e:
             self.logger.error(f"Error getting PPDB info: {e}")
             return "Maaf, terjadi kesalahan saat mengambil informasi PPDB."
@@ -437,19 +443,19 @@ class MessageProcessor:
         """Generate calendar response."""
         try:
             events = self.calendar.get_upcoming_events(days=30, limit=10)
-            
+
             if not events:
                 return "Maaf, tidak ada kegiatan yang akan datang."
-            
+
             response = "📅 *KALENDER AKADEMIK*\n\n"
-            
+
             for event in events:
                 response += f"📌 {event['event_name']}\n"
                 response += f"   📅 {event['event_date']}\n"
                 response += f"   📝 {event['description']}\n\n"
-            
+
             return response
-            
+
         except Exception as e:
             self.logger.error(f"Error getting calendar info: {e}")
             return "Maaf, terjadi kesalahan saat mengambil kalender."
@@ -458,21 +464,21 @@ class MessageProcessor:
         """Generate contact response."""
         try:
             contacts = self.contact.get_contacts()
-            
+
             if not contacts:
                 return "Maaf, informasi kontak belum tersedia."
-            
+
             response = "📞 *KONTAK SEKOLAH*\n\n"
-            
+
             for contact in contacts:
                 response += f"👤 {contact['name']} ({contact['role']})\n"
                 response += f"   📱 {contact['phone_number']}\n"
-                if contact['email']:
+                if contact["email"]:
                     response += f"   📧 {contact['email']}\n"
                 response += f"   📝 {contact['description']}\n\n"
-            
+
             return response
-            
+
         except Exception as e:
             self.logger.error(f"Error getting contact info: {e}")
             return "Maaf, terjadi kesalahan saat mengambil informasi kontak."
@@ -481,20 +487,20 @@ class MessageProcessor:
         """Generate facilities response."""
         try:
             facilities = self.facilities.get_facilities()
-            
+
             if not facilities:
                 return "Maaf, informasi fasilitas belum tersedia."
-            
+
             response = "🏢 *FASILITAS SEKOLAH*\n\n"
-            
+
             for facility in facilities:
                 response += f"🏗️ {facility['name']}\n"
                 response += f"   📍 {facility['location']}\n"
                 response += f"   👥 Kapasitas: {facility['capacity']}\n"
                 response += f"   📝 {facility['description']}\n\n"
-            
+
             return response
-            
+
         except Exception as e:
             self.logger.error(f"Error getting facilities info: {e}")
             return "Maaf, terjadi kesalahan saat mengambil informasi fasilitas."
@@ -503,20 +509,20 @@ class MessageProcessor:
         """Generate extracurricular response."""
         try:
             ekskul = self.extracurricular.get_extracurriculars()
-            
+
             if not ekskul:
                 return "Maaf, informasi ekstrakurikuler belum tersedia."
-            
+
             response = "⚽ *EKSTRAKURIKULER*\n\n"
-            
+
             for activity in ekskul:
                 response += f"🎯 {activity['name']}\n"
                 response += f"   ⏰ {activity['schedule']}\n"
                 response += f"   👤 Contact: {activity['contact_person']}\n"
                 response += f"   📝 {activity['description']}\n\n"
-            
+
             return response
-            
+
         except Exception as e:
             self.logger.error(f"Error getting extracurricular info: {e}")
             return "Maaf, terjadi kesalahan saat mengambil informasi ekstrakurikuler."
@@ -525,25 +531,25 @@ class MessageProcessor:
         """Generate FAQ response."""
         try:
             faqs = self.faq.search_faq(message, limit=3)
-            
+
             if not faqs:
                 return (
                     "❓ Maaf, saya tidak menemukan jawaban untuk pertanyaan Anda.\n\n"
                     "Ketik 'menu' untuk melihat topik yang tersedia, "
                     "atau coba kata kunci lain."
                 )
-            
+
             response = "❓ *FAQ - PERTANYAAN UMUM*\n\n"
-            
+
             for idx, faq in enumerate(faqs, 1):
                 response += f"Q{idx}: {faq['question']}\n"
                 response += f"A{idx}: {faq['answer']}\n\n"
-                
+
                 # Increment hit count
-                self.faq.increment_hit_count(faq['id'])
-            
+                self.faq.increment_hit_count(faq["id"])
+
             return response
-            
+
         except Exception as e:
             self.logger.error(f"Error searching FAQ: {e}")
             return "Maaf, terjadi kesalahan saat mencari FAQ."
@@ -566,7 +572,7 @@ class MessageProcessor:
         message: str,
         response: str,
         intent_detected: str,
-        response_time_ms: int
+        response_time_ms: int,
     ) -> None:
         """
         Log conversation to database.
@@ -582,13 +588,13 @@ class MessageProcessor:
             # Sanitize message for logging (security)
             safe_message = "[redacted]"
             safe_response = self.output_encoder.encode_for_log(response)
-            
+
             self.conversation_log.log_conversation(
                 phone_number=phone_number,
                 message=safe_message,
                 response=safe_response,
                 intent_detected=intent_detected,
-                response_time_ms=response_time_ms
+                response_time_ms=response_time_ms,
             )
         except Exception as e:
             self.logger.error(f"Error logging conversation: {e}")

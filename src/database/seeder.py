@@ -16,7 +16,7 @@ from .models import (
     ContactModel,
     FacilitiesModel,
     ExtracurricularModel,
-    PPDBInfoModel
+    PPDBInfoModel,
 )
 from utils import CacheManager
 
@@ -68,15 +68,20 @@ class DatabaseSeeder:
         update, so only the current canonical data set ends up active.
         """
         tables = [
-            "school_info", "jurusan", "ppdb_info", "calendar",
-            "contact", "facilities", "extracurricular", "faq"
+            "school_info",
+            "jurusan",
+            "ppdb_info",
+            "calendar",
+            "contact",
+            "facilities",
+            "extracurricular",
+            "faq",
         ]
         for table in tables:
             try:
                 self.db.execute_query(f"UPDATE {table} SET is_active = 0")
             except Exception:
                 pass  # table may not exist yet on a fresh DB
-
 
     def seed_school_info(self) -> None:
         """Seed school information based on official Kemendikbud Dapodik data."""
@@ -90,7 +95,7 @@ class DatabaseSeeder:
                 "category": "general",
                 "description": "Nama resmi sekolah",
                 "source": "Dapodik Kemendikbud",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "key": "npsn",
@@ -98,7 +103,7 @@ class DatabaseSeeder:
                 "category": "general",
                 "description": "Nomor Pokok Sekolah Nasional",
                 "source": "Dapodik Kemendikbud",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "key": "alamat",
@@ -106,7 +111,7 @@ class DatabaseSeeder:
                 "category": "general",
                 "description": "Alamat resmi SMKN 11 Jakarta",
                 "source": "Dapodik Kemendikbud",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "key": "telepon",
@@ -114,7 +119,7 @@ class DatabaseSeeder:
                 "category": "general",
                 "description": "Nomor telepon sekolah",
                 "source": "Dapodik Kemendikbud",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "key": "email",
@@ -122,7 +127,7 @@ class DatabaseSeeder:
                 "category": "general",
                 "description": "Email resmi sekolah",
                 "source": "Dapodik Kemendikbud",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "key": "website",
@@ -130,7 +135,7 @@ class DatabaseSeeder:
                 "category": "general",
                 "description": "Website resmi SMKN 11 Jakarta",
                 "source": "Dapodik Kemendikbud",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "key": "jam_operasional",
@@ -138,7 +143,7 @@ class DatabaseSeeder:
                 "category": "general",
                 "description": "Jam kegiatan belajar mengajar",
                 "source": "Dapodik Kemendikbud",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "key": "visi",
@@ -146,7 +151,7 @@ class DatabaseSeeder:
                 "category": "visi_misi",
                 "description": "Visi SMKN 11 Jakarta",
                 "source": "Profil Sekolah SMKN 11 Jakarta",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "key": "misi",
@@ -154,7 +159,7 @@ class DatabaseSeeder:
                 "category": "visi_misi",
                 "description": "Misi SMKN 11 Jakarta",
                 "source": "Profil Sekolah SMKN 11 Jakarta",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "key": "sejarah",
@@ -162,7 +167,7 @@ class DatabaseSeeder:
                 "category": "sejarah",
                 "description": "Profil singkat SMKN 11 Jakarta",
                 "source": "Profil Sekolah SMKN 11 Jakarta",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "key": "kepala_sekolah",
@@ -170,7 +175,7 @@ class DatabaseSeeder:
                 "category": "statistik",
                 "description": "Kepala Sekolah",
                 "source": "Belum terverifikasi",
-                "verified_at": None
+                "verified_at": None,
             },
             {
                 "key": "akreditasi",
@@ -178,8 +183,8 @@ class DatabaseSeeder:
                 "category": "general",
                 "description": "Status akreditasi sekolah",
                 "source": "BAN-S/M Kemendikbud",
-                "verified_at": today
-            }
+                "verified_at": today,
+            },
         ]
 
         for item in school_data:
@@ -190,7 +195,7 @@ class DatabaseSeeder:
                 description=item["description"],
                 is_active=True,
                 source=item["source"],
-                verified_at=item["verified_at"]
+                verified_at=item["verified_at"],
             )
 
     def seed_jurusan(self) -> None:
@@ -209,7 +214,7 @@ class DatabaseSeeder:
                 "prospek": "Staf Akuntansi, Staf Pajak, Kasir/Teller Perbankan, Administrasi Keuangan, Internal Auditor Assistant, Wirausaha.",
                 "kuota": 72,
                 "source": "Kurikulum Resmi SMKN 11 Jakarta",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "nama": "Manajemen Perkantoran dan Layanan Bisnis",
@@ -219,7 +224,7 @@ class DatabaseSeeder:
                 "prospek": "Sekretaris Junior, Staff Administrasi Perkantoran, Customer Service Officer, Arsiparis Digital, Public Relations Assistant.",
                 "kuota": 72,
                 "source": "Kurikulum Resmi SMKN 11 Jakarta",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "nama": "Pemasaran",
@@ -229,8 +234,8 @@ class DatabaseSeeder:
                 "prospek": "Digital Marketer, Retail Supervisor, Pramuniaga Profesional, Social Media Specialist, Visual Merchandiser, Entrepreneur.",
                 "kuota": 72,
                 "source": "Kurikulum Resmi SMKN 11 Jakarta",
-                "verified_at": today
-            }
+                "verified_at": today,
+            },
         ]
 
         for jurusan in jurusan_data:
@@ -243,9 +248,8 @@ class DatabaseSeeder:
                 kuota=jurusan["kuota"],
                 is_active=True,
                 source=jurusan["source"],
-                verified_at=jurusan["verified_at"]
+                verified_at=jurusan["verified_at"],
             )
-
 
     def seed_faq(self) -> None:
         """Seed FAQ data for SMKN 11 Jakarta."""
@@ -259,7 +263,7 @@ class DatabaseSeeder:
                 "category": "pendaftaran",
                 "priority": 10,
                 "source": "Dinas Pendidikan DKI Jakarta",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "question": "Berapa biaya pendidikan atau SPP di SMKN 11 Jakarta?",
@@ -268,7 +272,7 @@ class DatabaseSeeder:
                 "category": "biaya",
                 "priority": 10,
                 "source": "Kebijakan Pemprov DKI Jakarta",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "question": "Jurusan apa saja yang tersedia di SMKN 11 Jakarta?",
@@ -277,7 +281,7 @@ class DatabaseSeeder:
                 "category": "jurusan",
                 "priority": 10,
                 "source": "Dapodik Kemendikbud",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "question": "Dimana lokasi dan alamat lengkap SMKN 11 Jakarta?",
@@ -286,7 +290,7 @@ class DatabaseSeeder:
                 "category": "lokasi",
                 "priority": 9,
                 "source": "Dapodik Kemendikbud",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "question": "Kapan jadwal pendaftaran PPDB dibuka?",
@@ -295,7 +299,7 @@ class DatabaseSeeder:
                 "category": "pendaftaran",
                 "priority": 9,
                 "source": "Dinas Pendidikan DKI Jakarta",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "question": "Apa saja syarat pendaftaran calon siswa baru?",
@@ -304,7 +308,7 @@ class DatabaseSeeder:
                 "category": "pendaftaran",
                 "priority": 9,
                 "source": "Dinas Pendidikan DKI Jakarta",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "question": "Apakah ada beasiswa seperti KJP Plus di SMKN 11 Jakarta?",
@@ -313,7 +317,7 @@ class DatabaseSeeder:
                 "category": "biaya",
                 "priority": 8,
                 "source": "Puslapdik / P4OP DKI Jakarta",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "question": "Bagaimana jam belajar di SMKN 11 Jakarta?",
@@ -322,7 +326,7 @@ class DatabaseSeeder:
                 "category": "umum",
                 "priority": 7,
                 "source": "Dapodik Kemendikbud",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "question": "Apakah SMKN 11 Jakarta menyediakan asrama?",
@@ -331,7 +335,7 @@ class DatabaseSeeder:
                 "category": "fasilitas",
                 "priority": 6,
                 "source": "Dapodik Kemendikbud",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "question": "Bagaimana cara menghubungi bagian Tata Usaha atau humas sekolah?",
@@ -340,8 +344,8 @@ class DatabaseSeeder:
                 "category": "kontak",
                 "priority": 8,
                 "source": "Dapodik Kemendikbud",
-                "verified_at": today
-            }
+                "verified_at": today,
+            },
         ]
 
         for faq in faq_data:
@@ -353,7 +357,7 @@ class DatabaseSeeder:
                 priority=faq["priority"],
                 is_active=True,
                 source=faq["source"],
-                verified_at=faq["verified_at"]
+                verified_at=faq["verified_at"],
             )
 
     def seed_calendar(self) -> None:
@@ -368,7 +372,7 @@ class DatabaseSeeder:
                 "description": "Hari pertama masuk sekolah dan pelaksanaan MPLS bagi siswa baru",
                 "tahun_ajaran": "2025/2026",
                 "source": "Kalender Pendidikan DKI Jakarta",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "event_name": "Penilaian Tengah Semester (PTS) Ganjil",
@@ -377,7 +381,7 @@ class DatabaseSeeder:
                 "description": "Pelaksanaan ujian tengah semester ganjil",
                 "tahun_ajaran": "2025/2026",
                 "source": "Kalender Pendidikan DKI Jakarta",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "event_name": "Penilaian Akhir Semester (PAS) Ganjil",
@@ -386,7 +390,7 @@ class DatabaseSeeder:
                 "description": "Pelaksanaan ujian akhir semester ganjil",
                 "tahun_ajaran": "2025/2026",
                 "source": "Kalender Pendidikan DKI Jakarta",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "event_name": "Libur Semester Ganjil",
@@ -395,7 +399,7 @@ class DatabaseSeeder:
                 "description": "Libur akhir semester ganjil tahun ajaran",
                 "tahun_ajaran": "2025/2026",
                 "source": "Kalender Pendidikan DKI Jakarta",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "event_name": "Awal Semester Genap",
@@ -404,7 +408,7 @@ class DatabaseSeeder:
                 "description": "Hari pertama kegiatan belajar semester genap",
                 "tahun_ajaran": "2025/2026",
                 "source": "Kalender Pendidikan DKI Jakarta",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "event_name": "Uji Kompetensi Keahlian (UKK)",
@@ -413,7 +417,7 @@ class DatabaseSeeder:
                 "description": "Uji sertifikasi kompetensi keahlian untuk kelas XII",
                 "tahun_ajaran": "2025/2026",
                 "source": "Kalender Pendidikan DKI Jakarta",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "event_name": "Ujian Sekolah Berstandar",
@@ -422,7 +426,7 @@ class DatabaseSeeder:
                 "description": "Ujian sekolah tingkat akhir bagi peserta didik kelas XII",
                 "tahun_ajaran": "2025/2026",
                 "source": "Kalender Pendidikan DKI Jakarta",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "event_name": "Penilaian Akhir Tahun (PAT) Genap",
@@ -431,8 +435,8 @@ class DatabaseSeeder:
                 "description": "Penilaian kenaikan kelas bagi siswa kelas X dan XI",
                 "tahun_ajaran": "2025/2026",
                 "source": "Kalender Pendidikan DKI Jakarta",
-                "verified_at": today
-            }
+                "verified_at": today,
+            },
         ]
 
         for event in calendar_data:
@@ -444,7 +448,7 @@ class DatabaseSeeder:
                 tahun_ajaran=event["tahun_ajaran"],
                 is_active=True,
                 source=event["source"],
-                verified_at=event["verified_at"]
+                verified_at=event["verified_at"],
             )
 
     def seed_contacts(self) -> None:
@@ -459,7 +463,7 @@ class DatabaseSeeder:
                 "email": "smkn11jakarta@gmail.com",
                 "description": "Pelayanan administrasi persuratan, legalisir, mutasi, dan informasi umum",
                 "source": "Dapodik Kemendikbud",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "name": "Bimbingan & Konseling (BK)",
@@ -468,7 +472,7 @@ class DatabaseSeeder:
                 "email": "bk@smkn11jakarta.sch.id",
                 "description": "Layanan konsultasi psikologis, karir siswa, dan kelanjutan studi",
                 "source": "Belum terverifikasi",
-                "verified_at": None
+                "verified_at": None,
             },
             {
                 "name": "Hubungan Masyarakat & Industri (Humas)",
@@ -477,7 +481,7 @@ class DatabaseSeeder:
                 "email": "humas@smkn11jakarta.sch.id",
                 "description": "Kerjasama PKL, penempatan kerja, kemitraan DUDI dan publik",
                 "source": "Belum terverifikasi",
-                "verified_at": None
+                "verified_at": None,
             },
             {
                 "name": "Kesiswaan & Ekstrakurikuler",
@@ -486,8 +490,8 @@ class DatabaseSeeder:
                 "email": "kesiswaan@smkn11jakarta.sch.id",
                 "description": "Kedisiplinan, OSIS, pembinaan ekstrakurikuler, dan beasiswa KJP",
                 "source": "Belum terverifikasi",
-                "verified_at": None
-            }
+                "verified_at": None,
+            },
         ]
 
         for contact in contact_data:
@@ -499,7 +503,7 @@ class DatabaseSeeder:
                 description=contact["description"],
                 is_active=True,
                 source=contact["source"],
-                verified_at=contact["verified_at"]
+                verified_at=contact["verified_at"],
             )
 
     def seed_facilities(self) -> None:
@@ -513,7 +517,7 @@ class DatabaseSeeder:
                 "location": "Gedung Utama Lt. 2",
                 "capacity": 40,
                 "source": "Dapodik Kemendikbud",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "name": "Laboratorium Akuntansi & Keuangan",
@@ -521,7 +525,7 @@ class DatabaseSeeder:
                 "location": "Gedung Utama Lt. 2",
                 "capacity": 40,
                 "source": "Dapodik Kemendikbud",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "name": "Laboratorium Manajemen Perkantoran",
@@ -529,7 +533,7 @@ class DatabaseSeeder:
                 "location": "Gedung Utama Lt. 3",
                 "capacity": 36,
                 "source": "Dapodik Kemendikbud",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "name": "Business Center & Laboratorium Retail",
@@ -537,7 +541,7 @@ class DatabaseSeeder:
                 "location": "Gedung Utama Lt. 1",
                 "capacity": 30,
                 "source": "Kurikulum SMKN 11 Jakarta",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "name": "Perpustakaan Sekolah",
@@ -545,7 +549,7 @@ class DatabaseSeeder:
                 "location": "Gedung Utama Lt. 1",
                 "capacity": 50,
                 "source": "Dapodik Kemendikbud",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "name": "Musholla Sekolah",
@@ -553,7 +557,7 @@ class DatabaseSeeder:
                 "location": "Area Sekolah",
                 "capacity": 100,
                 "source": "Dapodik Kemendikbud",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "name": "Lapangan Olahraga & Upacara",
@@ -561,7 +565,7 @@ class DatabaseSeeder:
                 "location": "Halaman Utama",
                 "capacity": 300,
                 "source": "Dapodik Kemendikbud",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "name": "Kantin Sekolah",
@@ -569,8 +573,8 @@ class DatabaseSeeder:
                 "location": "Area Belakang",
                 "capacity": 80,
                 "source": "Belum terverifikasi",
-                "verified_at": None
-            }
+                "verified_at": None,
+            },
         ]
 
         for facility in facilities_data:
@@ -581,7 +585,7 @@ class DatabaseSeeder:
                 capacity=facility["capacity"],
                 is_active=True,
                 source=facility["source"],
-                verified_at=facility["verified_at"]
+                verified_at=facility["verified_at"],
             )
 
     def seed_extracurricular(self) -> None:
@@ -596,7 +600,7 @@ class DatabaseSeeder:
                 "requirements": "Seragam Pramuka lengkap",
                 "contact_person": "Pembina Pramuka",
                 "source": "Program Kesiswaan SMKN 11",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "name": "Paskibra",
@@ -605,7 +609,7 @@ class DatabaseSeeder:
                 "requirements": "Fisik sehat dan komitmen latihan",
                 "contact_person": "Pelatih Paskibra",
                 "source": "Program Kesiswaan SMKN 11",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "name": "Palang Merah Remaja (PMR)",
@@ -614,7 +618,7 @@ class DatabaseSeeder:
                 "requirements": "Minat dalam bidang kesehatan dan kemanusiaan",
                 "contact_person": "Pembina PMR",
                 "source": "Program Kesiswaan SMKN 11",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "name": "Rohani Islam (Rohis)",
@@ -623,7 +627,7 @@ class DatabaseSeeder:
                 "requirements": "Terbuka untuk seluruh siswa Muslim",
                 "contact_person": "Pembina Rohis",
                 "source": "Program Kesiswaan SMKN 11",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "name": "Rohani Kristen (Rohkris)",
@@ -632,7 +636,7 @@ class DatabaseSeeder:
                 "requirements": "Terbuka untuk seluruh siswa Kristiani",
                 "contact_person": "Pembina Rohkris",
                 "source": "Program Kesiswaan SMKN 11",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "name": "Futsal",
@@ -641,7 +645,7 @@ class DatabaseSeeder:
                 "requirements": "Pakaian olahraga dan sepatu futsal",
                 "contact_person": "Pelatih Futsal",
                 "source": "Program Kesiswaan SMKN 11",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "name": "Bola Basket",
@@ -650,7 +654,7 @@ class DatabaseSeeder:
                 "requirements": "Sepatu olahraga",
                 "contact_person": "Pelatih Basket",
                 "source": "Program Kesiswaan SMKN 11",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "name": "English Club",
@@ -659,8 +663,8 @@ class DatabaseSeeder:
                 "requirements": "Ketertarikan mengasah kemampuan bahasa Inggris",
                 "contact_person": "Guru Pendamping Bahasa Inggris",
                 "source": "Program Kesiswaan SMKN 11",
-                "verified_at": today
-            }
+                "verified_at": today,
+            },
         ]
 
         for ekskul in ekskul_data:
@@ -672,7 +676,7 @@ class DatabaseSeeder:
                 contact_person=ekskul["contact_person"],
                 is_active=True,
                 source=ekskul["source"],
-                verified_at=ekskul["verified_at"]
+                verified_at=ekskul["verified_at"],
             )
 
     def seed_ppdb_info(self) -> None:
@@ -686,92 +690,92 @@ class DatabaseSeeder:
                 "value": tahun_ajaran,
                 "category": "umum",
                 "source": "Dinas Pendidikan DKI Jakarta",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "key": "jalur_pendaftaran",
                 "value": "1) Jalur Prestasi (Akademik & Non-Akademik)\n2) Jalur Afirmasi (KJP Plus / PIP / DTKS / Anak Nakes Covid / Disabilitas)\n3) Jalur Domisili / Zonasi Prioritas\n4) Jalur Pindah Tugas Orang Tua (PTO)",
                 "category": "umum",
                 "source": "Juknis PPDB DKI Jakarta",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "key": "tanggal_pendaftaran",
                 "value": "Mei - Juni (jadwal detail mengacu pada Pergub & Kepdis Dinas Pendidikan DKI Jakarta)",
                 "category": "umum",
                 "source": "Juknis PPDB DKI Jakarta",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "key": "website_ppdb",
                 "value": "https://ppdb.jakarta.go.id",
                 "category": "umum",
                 "source": "Dinas Pendidikan DKI Jakarta",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "key": "syarat_umum",
                 "value": "1. Warga Negara Indonesia (WNI)\n2. Lulus SMP/MTs atau bentuk lain yang sederajat\n3. Berusia paling tinggi 21 tahun pada tanggal 1 Juli tahun berjalan\n4. Memiliki Kartu Keluarga (KK) DKI Jakarta yang diterbitkan minimal 1 tahun sebelum pendaftaran\n5. Memiliki nilai Rapor semester 1-5 SMP/sederajat yang telah divalidasi SIDANIRA",
                 "category": "syarat",
                 "source": "Juknis PPDB DKI Jakarta",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "key": "syarat_prestasi",
                 "value": "Seleksi berdasarkan pembobotan nilai rapor semester 1-5 ditambah sertifikat kejuaraan/prestasi akademik maupun non-akademik tingkat kota, provinsi, nasional, atau internasional.",
                 "category": "syarat",
                 "source": "Juknis PPDB DKI Jakarta",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "key": "syarat_afirmasi",
                 "value": "Diperuntukkan bagi pemegang KJP Plus aktif, terdaftar dalam DTKS Kemensos, anak panti asuhan, atau penyandang disabilitas dengan bukti dokumen yang sah.",
                 "category": "syarat",
                 "source": "Juknis PPDB DKI Jakarta",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "key": "syarat_zonasi",
                 "value": "Didasarkan pada kelurahan domisili peserta didik yang bersesuaian dengan zona sekolah yang ditetapkan oleh Dinas Pendidikan DKI Jakarta.",
                 "category": "syarat",
                 "source": "Juknis PPDB DKI Jakarta",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "key": "dokumen_dibutuhkan",
                 "value": "1. Kartu Keluarga (KK) asli dan fotokopi\n2. Akta Kelahiran / Surat Keterangan Lahir\n3. Rapor SMP semester 1 s.d. 5 dan bukti pengajuan akun SIDANIRA\n4. Ijazah / Surat Keterangan Lulus (SKL) SMP\n5. Bukti cetak tanda bukti pengajuan akun PPDB online\n6. Sertifikat prestasi / KJP / kartu afirmasi (jika ada)",
                 "category": "dokumen",
                 "source": "Juknis PPDB DKI Jakarta",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "key": "alur_pendaftaran",
                 "value": "1. Pengajuan Akun & Verifikasi KK di https://ppdb.jakarta.go.id\n2. Aktivasi PIN/Token setelah disetujui\n3. Pemilihan Sekolah dan Jurusan SMKN 11 Jakarta secara online\n4. Memantau hasil seleksi secara berkala di portal PPDB\n5. Lapor Diri online bagi yang dinyatakan lolos seleksi\n6. Verifikasi berkas fisik saat daftar ulang di sekolah",
                 "category": "proses",
                 "source": "Juknis PPDB DKI Jakarta",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "key": "biaya_pendaftaran",
                 "value": "Gratis (Rp 0). Seluruh proses pendaftaran PPDB tidak dipungut biaya apapun.",
                 "category": "biaya",
                 "source": "Dinas Pendidikan DKI Jakarta",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "key": "biaya_operasional",
                 "value": "Gratis (Rp 0). Biaya operasional sekolah dibiayai penuh oleh Pemprov DKI Jakarta melalui dana BOP dan BOS Pusat.",
                 "category": "biaya",
                 "source": "Dinas Pendidikan DKI Jakarta",
-                "verified_at": today
+                "verified_at": today,
             },
             {
                 "key": "biaya_spp",
                 "value": "Gratis (Rp 0). Tidak ada uang SPP bulanan.",
                 "category": "biaya",
                 "source": "Dinas Pendidikan DKI Jakarta",
-                "verified_at": today
-            }
+                "verified_at": today,
+            },
         ]
 
         for item in ppdb_data:
@@ -782,7 +786,7 @@ class DatabaseSeeder:
                 tahun_ajaran=tahun_ajaran,
                 is_active=True,
                 source=item["source"],
-                verified_at=item["verified_at"]
+                verified_at=item["verified_at"],
             )
 
 

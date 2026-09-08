@@ -21,7 +21,7 @@ from utils import (
     get_load_balancer,
     get_security_logger,
     get_rate_limiter_security,
-    get_security_best_practices
+    get_security_best_practices,
 )
 from database import (
     initialize_database,
@@ -34,7 +34,7 @@ from database import (
     ExtracurricularModel,
     PPDBInfoModel,
     ConversationLogModel,
-    seed_database
+    seed_database,
 )
 from handlers import WhatsAppHandler, MessageProcessor
 
@@ -42,9 +42,7 @@ from handlers import WhatsAppHandler, MessageProcessor
 class SiSebelBot:
     def __init__(self):
         self.logger = setup_application_logger(
-            app_name="sisebel",
-            log_level=settings.log_level,
-            log_file=settings.log_file
+            app_name="sisebel", log_level=settings.log_level, log_file=settings.log_file
         )
         self.logger.info("Initializing Si Sebel Bot...")
         self.logger.info(f"Environment: {settings.environment}")
@@ -70,7 +68,7 @@ class SiSebelBot:
                 password=settings.redis_password if settings.redis_password else None,
                 ttl=settings.cache_ttl,
                 enabled=settings.enable_cache,
-                logger=self.logger
+                logger=self.logger,
             )
             if self.cache.enabled:
                 self.cache.connect()
@@ -84,19 +82,16 @@ class SiSebelBot:
                 max_connections=50,
                 max_requests=100,
                 rate_limit_window=60,
-                logger=self.logger
+                logger=self.logger,
             )
             self.logger.info("Load balancer OK")
 
             self.logger.info("Initializing security...")
             self.security_logger = get_security_logger(self.logger)
             self.rate_limiter_security = get_rate_limiter_security(
-                max_requests=100,
-                time_window=60,
-                block_duration=300,
-                logger=self.logger
+                max_requests=100, time_window=60, block_duration=300, logger=self.logger
             )
-            security_practices = get_security_best_practices(self.logger)
+            get_security_best_practices(self.logger)
             self.logger.info("Security OK")
 
             self.logger.info("Initializing database...")
@@ -139,7 +134,7 @@ class SiSebelBot:
                 extracurricular=self.extracurricular,
                 ppdb=self.ppdb,
                 conversation_log=self.conversation_log,
-                logger=self.logger
+                logger=self.logger,
             )
             self.logger.info("Message processor ready")
         except Exception as e:
@@ -155,21 +150,21 @@ class SiSebelBot:
             async def on_message_callback(message):
                 resources_acquired = False
                 try:
-                    sender = message.get('from', '').split('@')[0]
-                    body = message.get('body', '')
-                    message_id = message.get('id') or message.get('message_id')
+                    sender = message.get("from", "").split("@")[0]
+                    body = message.get("body", "")
+                    message_id = message.get("id") or message.get("message_id")
                     if not body:
                         return
                     if message_id and not self.db.claim_message_id(str(message_id)):
                         self.logger.info("Duplicate message ignored")
                         return
 
-                    is_allowed, block_reason = self.rate_limiter_security.is_allowed(sender)
+                    is_allowed, block_reason = self.rate_limiter_security.is_allowed(
+                        sender
+                    )
                     if not is_allowed:
                         await self.whatsapp_handler.send_message(
-                            phone_number=sender,
-                            text=f"⚠️ {block_reason}",
-                            delay=1
+                            phone_number=sender, text=f"⚠️ {block_reason}", delay=1
                         )
                         return
 
@@ -179,14 +174,13 @@ class SiSebelBot:
                     resources_acquired = True
 
                     response = await self.message_processor.process_message(
-                        phone_number=sender,
-                        message=body
+                        phone_number=sender, message=body
                     )
                     if response:
                         await self.whatsapp_handler.send_message(
                             phone_number=sender,
                             text=response,
-                            delay=settings.bot_response_delay
+                            delay=settings.bot_response_delay,
                         )
                 except Exception as e:
                     self.logger.error("Callback failed: %s", e)
@@ -197,7 +191,7 @@ class SiSebelBot:
             self.whatsapp_handler = WhatsAppHandler(
                 auth_folder=str(auth_folder),
                 on_message_callback=on_message_callback,
-                logger=self.logger
+                logger=self.logger,
             )
             self.logger.info("WhatsApp handler setup OK")
         except Exception as e:
@@ -239,12 +233,11 @@ class SiSebelBot:
         self.logger.info("✓ Console mode active. Ketik pesan (exit untuk keluar).")
         while self.is_running:
             user_input = await asyncio.to_thread(input, ">> ")
-            if user_input.lower() in ['exit', 'quit', 'q']:
+            if user_input.lower() in ["exit", "quit", "q"]:
                 self.is_running = False
                 break
             response = await self.message_processor.process_message(
-                phone_number="6281234567890",
-                message=user_input
+                phone_number="6281234567890", message=user_input
             )
             print(f"\n🤖 Bot: {response}\n")
 
@@ -264,6 +257,7 @@ class SiSebelBot:
         def signal_handler(signum, frame):
             self.logger.info(f"Signal {signum}, shutting down...")
             self.is_running = False
+
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
 
@@ -280,6 +274,7 @@ async def main():
         sys.exit(1)
     finally:
         await bot.stop()
+
 
 if __name__ == "__main__":
     try:

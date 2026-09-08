@@ -10,10 +10,13 @@ class WhatsAppAdapter(Protocol):
 
     is_connected: bool
 
-    async def connect(self) -> None: ...
+    async def connect(self) -> None:
+        raise NotImplementedError
 
     async def send_message(
         self, phone_number: str, text: str, delay: float = 1.0
-    ) -> bool: ...
+    ) -> bool:
+        raise NotImplementedError
 
-    async def disconnect(self) -> None: ...
+    async def disconnect(self) -> None:
+        raise NotImplementedError

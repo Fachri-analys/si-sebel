@@ -5,7 +5,6 @@ Includes metadata: source, verified_at, updated_at, is_active.
 """
 
 from typing import List, Optional, Dict, Any
-from datetime import datetime
 import sqlite3
 import re
 
@@ -80,7 +79,9 @@ class SchoolInfoModel(BaseModel):
             query = "SELECT * FROM school_info WHERE key = ? AND is_active = 1"
             return self.db.execute_query(query, (key,), fetch=True)
         else:
-            query = "SELECT * FROM school_info WHERE is_active = 1 ORDER BY category, key"
+            query = (
+                "SELECT * FROM school_info WHERE is_active = 1 ORDER BY category, key"
+            )
             return self.db.execute_query(query, fetch_all=True) or []
 
     def set_info(
@@ -91,7 +92,7 @@ class SchoolInfoModel(BaseModel):
         description: str = None,
         is_active: bool = True,
         source: str = "Belum terverifikasi",
-        verified_at: Optional[str] = None
+        verified_at: Optional[str] = None,
     ) -> bool:
         """
         Set or update school information with cache invalidation (idempotent).
@@ -111,7 +112,15 @@ class SchoolInfoModel(BaseModel):
         try:
             self.db.execute_query(
                 query,
-                (key, value, category, description, 1 if is_active else 0, source, verified_at)
+                (
+                    key,
+                    value,
+                    category,
+                    description,
+                    1 if is_active else 0,
+                    source,
+                    verified_at,
+                ),
             )
 
             if self.cache:
@@ -124,7 +133,9 @@ class SchoolInfoModel(BaseModel):
 
     def get_by_category(self, category: str) -> Dict[str, str]:
         """Get school information by category."""
-        query = "SELECT key, value FROM school_info WHERE category = ? AND is_active = 1"
+        query = (
+            "SELECT key, value FROM school_info WHERE category = ? AND is_active = 1"
+        )
         results = self.db.execute_query(query, (category,), fetch_all=True) or []
         return {row["key"]: row["value"] for row in results}
 
@@ -176,7 +187,7 @@ class JurusanModel(BaseModel):
         kode: str = None,
         is_active: bool = True,
         source: str = "Belum terverifikasi",
-        verified_at: Optional[str] = None
+        verified_at: Optional[str] = None,
     ) -> bool:
         """Add or update a jurusan idempotently."""
         query = """
@@ -196,7 +207,17 @@ class JurusanModel(BaseModel):
         try:
             self.db.execute_query(
                 query,
-                (nama, kode, deskripsi, syarat, prospek, kuota, 1 if is_active else 0, source, verified_at)
+                (
+                    nama,
+                    kode,
+                    deskripsi,
+                    syarat,
+                    prospek,
+                    kuota,
+                    1 if is_active else 0,
+                    source,
+                    verified_at,
+                ),
             )
             if self.cache:
                 self.cache.delete(CacheKey.jurusan())
@@ -210,11 +231,44 @@ class FAQModel(BaseModel):
 
     # Common Indonesian stopwords to filter out from keyword matching
     STOPWORDS = {
-        "apa", "apakah", "siapa", "kapan", "dimana", "kemana", "mengapa",
-        "bagaimana", "kenapa", "ada", "adakah", "bisa", "dapat", "yang", "dan",
-        "di", "ke", "dari", "untuk", "pada", "dengan", "ini", "itu", "atau",
-        "saya", "kami", "kamu", "anda", "mau", "ingin", "tanya", "mohon",
-        "tolong", "halo", "hai", "si", "sebel", "sekolah"
+        "apa",
+        "apakah",
+        "siapa",
+        "kapan",
+        "dimana",
+        "kemana",
+        "mengapa",
+        "bagaimana",
+        "kenapa",
+        "ada",
+        "adakah",
+        "bisa",
+        "dapat",
+        "yang",
+        "dan",
+        "di",
+        "ke",
+        "dari",
+        "untuk",
+        "pada",
+        "dengan",
+        "ini",
+        "itu",
+        "atau",
+        "saya",
+        "kami",
+        "kamu",
+        "anda",
+        "mau",
+        "ingin",
+        "tanya",
+        "mohon",
+        "tolong",
+        "halo",
+        "hai",
+        "si",
+        "sebel",
+        "sekolah",
     }
 
     def search_faq(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:
@@ -226,7 +280,9 @@ class FAQModel(BaseModel):
                 return cached_value
 
         all_words = re.findall(r"[a-z0-9]+", query.lower())
-        meaningful_terms = [w for w in all_words if w not in self.STOPWORDS and len(w) > 2]
+        meaningful_terms = [
+            w for w in all_words if w not in self.STOPWORDS and len(w) > 2
+        ]
 
         # If all words were stopwords, fallback to using all words
         search_terms = meaningful_terms if meaningful_terms else all_words
@@ -234,10 +290,13 @@ class FAQModel(BaseModel):
         if not search_terms:
             return []
 
-        value = self.db.execute_query(
-            "SELECT * FROM faq WHERE is_active = 1",
-            fetch_all=True,
-        ) or []
+        value = (
+            self.db.execute_query(
+                "SELECT * FROM faq WHERE is_active = 1",
+                fetch_all=True,
+            )
+            or []
+        )
 
         def score(row: Dict[str, Any]) -> tuple:
             haystack = " ".join(
@@ -256,7 +315,9 @@ class FAQModel(BaseModel):
 
         return value
 
-    def get_faq_by_category(self, category: str, limit: int = 10) -> List[Dict[str, Any]]:
+    def get_faq_by_category(
+        self, category: str, limit: int = 10
+    ) -> List[Dict[str, Any]]:
         """Get FAQ by category."""
         query = """
             SELECT * FROM faq 
@@ -285,7 +346,7 @@ class FAQModel(BaseModel):
         priority: int = 0,
         is_active: bool = True,
         source: str = "Belum terverifikasi",
-        verified_at: Optional[str] = None
+        verified_at: Optional[str] = None,
     ) -> bool:
         """Add or update FAQ idempotently."""
         query = """
@@ -304,7 +365,16 @@ class FAQModel(BaseModel):
         try:
             self.db.execute_query(
                 query,
-                (question, answer, keywords, category, priority, 1 if is_active else 0, source, verified_at)
+                (
+                    question,
+                    answer,
+                    keywords,
+                    category,
+                    priority,
+                    1 if is_active else 0,
+                    source,
+                    verified_at,
+                ),
             )
             return True
         except Exception:
@@ -329,7 +399,7 @@ class ConversationLogModel(BaseModel):
         message: str,
         response: str = None,
         intent_detected: str = None,
-        response_time_ms: int = None
+        response_time_ms: int = None,
     ) -> bool:
         """Log a conversation."""
         phone_hash = self._hash_phone(phone_number)
@@ -342,7 +412,7 @@ class ConversationLogModel(BaseModel):
         try:
             self.db.execute_query(
                 query,
-                (phone_hash, message, response, intent_detected, response_time_ms)
+                (phone_hash, message, response, intent_detected, response_time_ms),
             )
             return True
         except Exception:
@@ -354,13 +424,17 @@ class ConversationLogModel(BaseModel):
             "total_conversations": "SELECT COUNT(*) as count FROM conversation_log",
             "unique_users": "SELECT COUNT(DISTINCT phone_number_hash) as count FROM conversation_log",
             "avg_response_time": "SELECT AVG(response_time_ms) as avg FROM conversation_log WHERE response_time_ms IS NOT NULL",
-            "total_intents": "SELECT COUNT(DISTINCT intent_detected) as count FROM conversation_log WHERE intent_detected IS NOT NULL"
+            "total_intents": "SELECT COUNT(DISTINCT intent_detected) as count FROM conversation_log WHERE intent_detected IS NOT NULL",
         }
 
         stats = {}
         for key, query in queries.items():
             result = self.db.execute_query(query, fetch=True)
-            stats[key] = result["count"] if result and "count" in result else (result["avg"] if result and "avg" in result else 0)
+            stats[key] = (
+                result["count"]
+                if result and "count" in result
+                else (result["avg"] if result and "avg" in result else 0)
+            )
 
         return stats
 
@@ -369,10 +443,7 @@ class CalendarModel(BaseModel):
     """Model for calendar/academic events operations."""
 
     def get_events(
-        self,
-        event_type: str = None,
-        tahun_ajaran: str = None,
-        limit: int = 20
+        self, event_type: str = None, tahun_ajaran: str = None, limit: int = 20
     ) -> List[Dict[str, Any]]:
         """Get calendar events with caching."""
         cache_key = CacheKey.calendar(event_type, tahun_ajaran)
@@ -409,7 +480,9 @@ class CalendarModel(BaseModel):
 
         return value
 
-    def get_upcoming_events(self, days: int = 60, limit: int = 10) -> List[Dict[str, Any]]:
+    def get_upcoming_events(
+        self, days: int = 60, limit: int = 10
+    ) -> List[Dict[str, Any]]:
         """
         Get upcoming events. Fallback to active calendar events if none found in window.
         """
@@ -431,7 +504,9 @@ class CalendarModel(BaseModel):
                 ORDER BY event_date DESC
                 LIMIT ?
             """
-            events = self.db.execute_query(fallback_query, (limit,), fetch_all=True) or []
+            events = (
+                self.db.execute_query(fallback_query, (limit,), fetch_all=True) or []
+            )
 
         return events
 
@@ -444,7 +519,7 @@ class CalendarModel(BaseModel):
         tahun_ajaran: str = "2025/2026",
         is_active: bool = True,
         source: str = "Belum terverifikasi",
-        verified_at: Optional[str] = None
+        verified_at: Optional[str] = None,
     ) -> bool:
         """Add or update event idempotently."""
         query = """
@@ -462,7 +537,16 @@ class CalendarModel(BaseModel):
         try:
             self.db.execute_query(
                 query,
-                (event_name, event_date, event_type, description, tahun_ajaran, 1 if is_active else 0, source, verified_at)
+                (
+                    event_name,
+                    event_date,
+                    event_type,
+                    description,
+                    tahun_ajaran,
+                    1 if is_active else 0,
+                    source,
+                    verified_at,
+                ),
             )
             return True
         except Exception:
@@ -472,7 +556,9 @@ class CalendarModel(BaseModel):
 class ContactModel(BaseModel):
     """Model for contact information operations."""
 
-    def get_contacts(self, role: str = None, active_only: bool = True) -> List[Dict[str, Any]]:
+    def get_contacts(
+        self, role: str = None, active_only: bool = True
+    ) -> List[Dict[str, Any]]:
         """Get contact information with caching."""
         cache_key = f"contact:role_{role}:active_{active_only}"
         if self.cache:
@@ -509,7 +595,7 @@ class ContactModel(BaseModel):
         description: str = None,
         is_active: bool = True,
         source: str = "Belum terverifikasi",
-        verified_at: Optional[str] = None
+        verified_at: Optional[str] = None,
     ) -> bool:
         """Add or update contact idempotently."""
         query = """
@@ -527,7 +613,16 @@ class ContactModel(BaseModel):
         try:
             self.db.execute_query(
                 query,
-                (name, role, phone_number, email, description, 1 if is_active else 0, source, verified_at)
+                (
+                    name,
+                    role,
+                    phone_number,
+                    email,
+                    description,
+                    1 if is_active else 0,
+                    source,
+                    verified_at,
+                ),
             )
             return True
         except Exception:
@@ -565,7 +660,7 @@ class FacilitiesModel(BaseModel):
         capacity: int = None,
         is_active: bool = True,
         source: str = "Belum terverifikasi",
-        verified_at: Optional[str] = None
+        verified_at: Optional[str] = None,
     ) -> bool:
         """Add or update facility idempotently."""
         query = """
@@ -583,7 +678,15 @@ class FacilitiesModel(BaseModel):
         try:
             self.db.execute_query(
                 query,
-                (name, description, location, capacity, 1 if is_active else 0, source, verified_at)
+                (
+                    name,
+                    description,
+                    location,
+                    capacity,
+                    1 if is_active else 0,
+                    source,
+                    verified_at,
+                ),
             )
             return True
         except Exception:
@@ -622,7 +725,7 @@ class ExtracurricularModel(BaseModel):
         contact_person: str = None,
         is_active: bool = True,
         source: str = "Belum terverifikasi",
-        verified_at: Optional[str] = None
+        verified_at: Optional[str] = None,
     ) -> bool:
         """Add or update extracurricular idempotently."""
         query = """
@@ -641,7 +744,16 @@ class ExtracurricularModel(BaseModel):
         try:
             self.db.execute_query(
                 query,
-                (name, description, schedule, requirements, contact_person, 1 if is_active else 0, source, verified_at)
+                (
+                    name,
+                    description,
+                    schedule,
+                    requirements,
+                    contact_person,
+                    1 if is_active else 0,
+                    source,
+                    verified_at,
+                ),
             )
             return True
         except Exception:
@@ -694,7 +806,7 @@ class PPDBInfoModel(BaseModel):
         tahun_ajaran: str = "2025/2026",
         is_active: bool = True,
         source: str = "Belum terverifikasi",
-        verified_at: Optional[str] = None
+        verified_at: Optional[str] = None,
     ) -> bool:
         """Set or update PPDB info idempotently."""
         query = """
@@ -712,7 +824,15 @@ class PPDBInfoModel(BaseModel):
         try:
             self.db.execute_query(
                 query,
-                (key, value, category, tahun_ajaran, 1 if is_active else 0, source, verified_at)
+                (
+                    key,
+                    value,
+                    category,
+                    tahun_ajaran,
+                    1 if is_active else 0,
+                    source,
+                    verified_at,
+                ),
             )
             return True
         except Exception:

@@ -23,12 +23,12 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install -r requirements.lock
     
     - name: Run tests before deployment
       run: |
         pip install pytest pytest-asyncio pytest-cov
-        pytest tests/ -v --cov=src/ --cov-fail-under=30
+        pytest tests/ -v --cov=src/ --cov-fail-under=32
     
     - name: Build deployment package
       run: |
@@ -38,6 +38,7 @@ jobs:
           Dockerfile \
           docker-compose.yml \
           requirements.txt \
+          requirements.lock \
           run_bot.py \
           README.md \
           config/.env.example
@@ -92,7 +93,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install -r requirements.lock
     
     - name: Deploy to staging
       run: |

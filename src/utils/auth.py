@@ -16,11 +16,13 @@ from .exceptions import SiSebelException
 
 class AuthenticationError(SiSebelException):
     """Exception raised for authentication errors."""
+
     pass
 
 
 class AuthorizationError(SiSebelException):
     """Exception raised for authorization errors."""
+
     pass
 
 
@@ -41,15 +43,15 @@ class PasswordManager:
         """
         if salt is None:
             salt = secrets.token_hex(16)
-        
+
         # Use PBKDF2 with SHA-256
         hashed = hashlib.pbkdf2_hmac(
-            'sha256',
-            password.encode('utf-8'),
-            salt.encode('utf-8'),
-            100000  # iterations
+            "sha256",
+            password.encode("utf-8"),
+            salt.encode("utf-8"),
+            100000,  # iterations
         ).hex()
-        
+
         return hashed, salt
 
     @staticmethod
@@ -66,12 +68,9 @@ class PasswordManager:
             True if password matches, False otherwise
         """
         new_hash = hashlib.pbkdf2_hmac(
-            'sha256',
-            password.encode('utf-8'),
-            salt.encode('utf-8'),
-            100000
+            "sha256", password.encode("utf-8"), salt.encode("utf-8"), 100000
         ).hex()
-        
+
         return hmac.compare_digest(new_hash, hashed_password)
 
 
@@ -86,7 +85,7 @@ class AdminUser:
         role: str = "admin",
         created_at: Optional[str] = None,
         last_login: Optional[str] = None,
-        is_active: bool = True
+        is_active: bool = True,
     ):
         """
         Initialize admin user.
@@ -115,7 +114,7 @@ class AdminUser:
             "role": self.role,
             "created_at": self.created_at,
             "last_login": self.last_login,
-            "is_active": self.is_active
+            "is_active": self.is_active,
         }
 
 
@@ -146,14 +145,14 @@ class SessionManager:
         """
         session_token = secrets.token_urlsafe(32)
         expires_at = datetime.now() + timedelta(seconds=self.session_timeout)
-        
+
         self.sessions[session_token] = {
             "username": username,
             "created_at": datetime.now().isoformat(),
             "expires_at": expires_at.isoformat(),
-            "last_activity": datetime.now().isoformat()
+            "last_activity": datetime.now().isoformat(),
         }
-        
+
         self.logger.info(f"Session created for {username}: {session_token[:8]}...")
         return session_token
 
@@ -169,19 +168,19 @@ class SessionManager:
         """
         if session_token not in self.sessions:
             return None
-        
+
         session = self.sessions[session_token]
-        
+
         # Check if expired
         expires_at = datetime.fromisoformat(session["expires_at"])
         if datetime.now() > expires_at:
             del self.sessions[session_token]
             self.logger.warning(f"Session expired: {session_token[:8]}...")
             return None
-        
+
         # Update last activity
         session["last_activity"] = datetime.now().isoformat()
-        
+
         return session["username"]
 
     def revoke_session(self, session_token: str) -> bool:
@@ -213,37 +212,37 @@ class SessionManager:
         """
         count = 0
         to_remove = []
-        
+
         for token, session in self.sessions.items():
             if session["username"] == username:
                 to_remove.append(token)
-        
+
         for token in to_remove:
             del self.sessions[token]
             count += 1
-        
+
         if count > 0:
             self.logger.info(f"Revoked {count} sessions for {username}")
-        
+
         return count
 
     def cleanup_expired_sessions(self) -> int:
         """Clean up expired sessions."""
         count = 0
         to_remove = []
-        
+
         for token, session in self.sessions.items():
             expires_at = datetime.fromisoformat(session["expires_at"])
             if datetime.now() > expires_at:
                 to_remove.append(token)
-        
+
         for token in to_remove:
             del self.sessions[token]
             count += 1
-        
+
         if count > 0:
             self.logger.info(f"Cleaned up {count} expired sessions")
-        
+
         return count
 
 
@@ -255,7 +254,7 @@ class AuthenticationManager:
         session_timeout: int = 3600,
         max_failed_attempts: int = 5,
         lockout_duration: int = 900,
-        logger: Optional[Logger] = None
+        logger: Optional[Logger] = None,
     ):
         """
         Initialize authentication manager.
@@ -270,17 +269,14 @@ class AuthenticationManager:
         self.max_failed_attempts = max_failed_attempts
         self.lockout_duration = lockout_duration
         self.logger = logger or Logger.get_logger("auth_manager")
-        
+
         self.admin_users: Dict[str, AdminUser] = {}
         self.session_manager = SessionManager(session_timeout, logger)
         self.failed_attempts: Dict[str, int] = {}
         self.locked_until: Dict[str, str] = {}
 
     def create_admin_user(
-        self,
-        username: str,
-        password: str,
-        role: str = "admin"
+        self, username: str, password: str, role: str = "admin"
     ) -> bool:
         """
         Create admin user.
@@ -296,23 +292,20 @@ class AuthenticationManager:
         if username in self.admin_users:
             self.logger.warning(f"Admin user {username} already exists")
             return False
-        
+
         # Validate password strength
         if len(password) < 8:
             self.logger.error("Password must be at least 8 characters")
             return False
-        
+
         # Hash password
         password_hash, salt = PasswordManager.hash_password(password)
-        
+
         # Create user
         self.admin_users[username] = AdminUser(
-            username=username,
-            password_hash=password_hash,
-            salt=salt,
-            role=role
+            username=username, password_hash=password_hash, salt=salt, role=role
         )
-        
+
         self.logger.info(f"Admin user created: {username}")
         return True
 
@@ -331,14 +324,14 @@ class AuthenticationManager:
         if username not in self.admin_users:
             self.logger.warning(f"Authentication failed: User {username} not found")
             return None
-        
+
         user = self.admin_users[username]
-        
+
         # Check if user is active
         if not user.is_active:
             self.logger.warning(f"Authentication failed: User {username} is inactive")
             return None
-        
+
         # Check if locked
         if username in self.locked_until:
             locked_until = datetime.fromisoformat(self.locked_until[username])
@@ -354,26 +347,30 @@ class AuthenticationManager:
         if not PasswordManager.verify_password(password, user.password_hash, user.salt):
             # Increment failed attempts
             self.failed_attempts[username] = self.failed_attempts.get(username, 0) + 1
-            
-            self.logger.warning(f"Authentication failed for {username} (attempt {self.failed_attempts[username]}/{self.max_failed_attempts})")
-            
+
+            self.logger.warning(
+                f"Authentication failed for {username} (attempt {self.failed_attempts[username]}/{self.max_failed_attempts})"
+            )
+
             # Lock if max attempts reached
             if self.failed_attempts[username] >= self.max_failed_attempts:
                 lock_until = datetime.now() + timedelta(seconds=self.lockout_duration)
                 self.locked_until[username] = lock_until.isoformat()
-                self.logger.warning(f"Account {username} locked for {self.lockout_duration}s")
-            
+                self.logger.warning(
+                    f"Account {username} locked for {self.lockout_duration}s"
+                )
+
             return None
-        
+
         # Reset failed attempts on success
         self.failed_attempts[username] = 0
-        
+
         # Update last login
         user.last_login = datetime.now().isoformat()
-        
+
         # Create session
         session_token = self.session_manager.create_session(username)
-        
+
         self.logger.info(f"Authentication successful for {username}")
         return session_token
 
@@ -401,25 +398,27 @@ class AuthenticationManager:
             True if authorized, False otherwise
         """
         username = self.session_manager.validate_session(session_token)
-        
+
         if username is None:
             return False
-        
+
         if username not in self.admin_users:
             return False
-        
+
         user = self.admin_users[username]
-        
+
         # Check role
         if required_role and user.role != required_role:
-            self.logger.warning(f"Authorization failed: {username} does not have required role {required_role}")
+            self.logger.warning(
+                f"Authorization failed: {username} does not have required role {required_role}"
+            )
             return False
-        
+
         # Check if active
         if not user.is_active:
             self.logger.warning(f"Authorization failed: {username} is inactive")
             return False
-        
+
         return True
 
     def get_user_info(self, session_token: str) -> Optional[Dict[str, Any]]:
@@ -433,10 +432,10 @@ class AuthenticationManager:
             User information or None
         """
         username = self.session_manager.validate_session(session_token)
-        
+
         if username is None or username not in self.admin_users:
             return None
-        
+
         return self.admin_users[username].to_dict()
 
     def cleanup(self) -> None:
@@ -454,7 +453,7 @@ def get_authentication_manager(
     session_timeout: int = 3600,
     max_failed_attempts: int = 5,
     lockout_duration: int = 900,
-    logger: Optional[Logger] = None
+    logger: Optional[Logger] = None,
 ) -> AuthenticationManager:
     """
     Get or create authentication manager instance.
@@ -474,6 +473,6 @@ def get_authentication_manager(
             session_timeout=session_timeout,
             max_failed_attempts=max_failed_attempts,
             lockout_duration=lockout_duration,
-            logger=logger
+            logger=logger,
         )
     return _auth_manager

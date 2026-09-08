@@ -14,6 +14,7 @@ from .exceptions import SiSebelException
 
 class SecurityError(SiSebelException):
     """Exception raised for security-related errors."""
+
     pass
 
 
@@ -22,28 +23,28 @@ class InputValidator:
 
     # Blocked patterns for injection prevention
     BLOCKED_PATTERNS = [
-        r"<script",           # Script tags
-        r"javascript:",       # JavaScript protocol
-        r"onerror=",          # Event handlers
-        r"onload=",           # Event handlers
-        r"onmouseover=",      # Event handlers
-        r"__import__",        # Python import
-        r"exec\(",            # Python exec
-        r"eval\(",            # Python eval
-        r"system\(",          # Python system
-        r"subprocess\.",      # Python subprocess
-        r"os\.system",        # OS system
-        r"shell_exec",        # Shell execution
-        r"passthru",          # Shell execution
-        r";\s*DROP",          # SQL injection
-        r";\s*DELETE",        # SQL injection
-        r";\s*INSERT",        # SQL injection
-        r";\s*UPDATE",        # SQL injection
-        r"UNION\s+SELECT",     # SQL injection
-        r"--",                 # SQL comment
-        r"/\*",               # SQL comment
-        r"\\x00",             # Null byte
-        r"\\r\\n",            # CRLF injection
+        r"<script",  # Script tags
+        r"javascript:",  # JavaScript protocol
+        r"onerror=",  # Event handlers
+        r"onload=",  # Event handlers
+        r"onmouseover=",  # Event handlers
+        r"__import__",  # Python import
+        r"exec\(",  # Python exec
+        r"eval\(",  # Python eval
+        r"system\(",  # Python system
+        r"subprocess\.",  # Python subprocess
+        r"os\.system",  # OS system
+        r"shell_exec",  # Shell execution
+        r"passthru",  # Shell execution
+        r";\s*DROP",  # SQL injection
+        r";\s*DELETE",  # SQL injection
+        r";\s*INSERT",  # SQL injection
+        r";\s*UPDATE",  # SQL injection
+        r"UNION\s+SELECT",  # SQL injection
+        r"--",  # SQL comment
+        r"/\*",  # SQL comment
+        r"\\x00",  # Null byte
+        r"\\r\\n",  # CRLF injection
     ]
 
     # Allowed characters for user input
@@ -113,13 +114,15 @@ class InputValidator:
         """
         # Remove excessive whitespace
         sanitized = " ".join(message.split())
-        
+
         # Remove null bytes
         sanitized = sanitized.replace("\x00", "")
-        
+
         # Remove potentially dangerous unicode control characters
-        sanitized = "".join(char for char in sanitized if ord(char) >= 32 or char in "\n\t")
-        
+        sanitized = "".join(
+            char for char in sanitized if ord(char) >= 32 or char in "\n\t"
+        )
+
         return sanitized
 
     def validate_phone_number(self, phone: str) -> Tuple[bool, str]:
@@ -215,7 +218,9 @@ class InputValidator:
             or settings.DEVELOPMENT_PHONE_HASH_KEY
         )
         if not key:
-            raise SecurityError("PHONE_HASH_KEY must be configured before hashing phone numbers")
+            raise SecurityError(
+                "PHONE_HASH_KEY must be configured before hashing phone numbers"
+            )
         return hmac.new(
             key.encode("utf-8"),
             phone.encode("utf-8"),
@@ -257,11 +262,11 @@ class OutputEncoder:
         text = text.replace("\r", "\\r")
         text = text.replace("\n", "\\n")
         text = text.replace("\x00", "\\x00")
-        
+
         # Truncate if too long
         if len(text) > 500:
             text = text[:500] + "... [truncated]"
-        
+
         return text
 
     @staticmethod
@@ -278,7 +283,7 @@ class OutputEncoder:
         # Truncate if too long
         if len(text) > 10000:
             text = text[:10000] + "... [truncated]"
-        
+
         return text.strip()
 
 
@@ -293,7 +298,7 @@ class SecurityLogger:
         "authorization_failure",
         "data_access_attempt",
         "configuration_change",
-        "suspicious_activity"
+        "suspicious_activity",
     ]
 
     def __init__(self, logger: Optional[Logger] = None):
@@ -306,10 +311,7 @@ class SecurityLogger:
         self.logger = logger or Logger.get_logger("security_logger")
 
     def log_security_event(
-        self,
-        event_type: str,
-        details: dict,
-        severity: str = "WARNING"
+        self, event_type: str, details: dict, severity: str = "WARNING"
     ) -> None:
         """
         Log security event.
@@ -321,9 +323,9 @@ class SecurityLogger:
         """
         if event_type not in self.SECURITY_EVENTS:
             self.logger.warning(f"Unknown security event type: {event_type}")
-        
+
         log_message = f"[SECURITY] {event_type}: {details}"
-        
+
         if severity == "CRITICAL":
             self.logger.critical(log_message)
         elif severity == "ERROR":
@@ -340,9 +342,7 @@ class SecurityLogger:
     def log_blocked_pattern(self, pattern: str, context: str) -> None:
         """Log blocked pattern detection."""
         self.log_security_event(
-            "blocked_pattern",
-            {"pattern": pattern, "context": context},
-            "WARNING"
+            "blocked_pattern", {"pattern": pattern, "context": context}, "WARNING"
         )
 
     def log_invalid_input(self, input_data: str, reason: str) -> None:
@@ -350,7 +350,7 @@ class SecurityLogger:
         self.log_security_event(
             "invalid_input",
             {"input_length": len(input_data), "reason": reason},
-            "WARNING"
+            "WARNING",
         )
 
 
@@ -362,7 +362,7 @@ class RateLimiterSecurity:
         max_requests: int = 100,
         time_window: int = 60,
         block_duration: int = 300,
-        logger: Optional[Logger] = None
+        logger: Optional[Logger] = None,
     ):
         """
         Initialize security rate limiter.
@@ -377,7 +377,7 @@ class RateLimiterSecurity:
         self.time_window = time_window
         self.block_duration = block_duration
         self.logger = logger or Logger.get_logger("rate_limiter_security")
-        
+
         self.requests = {}  # {identifier: [(timestamp, blocked)]}
         self.blocked_until = {}  # {identifier: blocked_until_timestamp}
 
@@ -392,6 +392,7 @@ class RateLimiterSecurity:
             Tuple of (is_allowed, block_reason)
         """
         import time
+
         current_time = time.time()
 
         # Check if blocked
@@ -406,15 +407,18 @@ class RateLimiterSecurity:
         # Clean old requests
         if identifier in self.requests:
             self.requests[identifier] = [
-                (ts, blocked) for ts, blocked in self.requests[identifier]
+                (ts, blocked)
+                for ts, blocked in self.requests[identifier]
                 if current_time - ts < self.time_window
             ]
         else:
             self.requests[identifier] = []
 
         # Check rate limit
-        recent_requests = [ts for ts, blocked in self.requests[identifier] if not blocked]
-        
+        recent_requests = [
+            ts for ts, blocked in self.requests[identifier] if not blocked
+        ]
+
         if len(recent_requests) >= self.max_requests:
             # Block the identifier
             self.blocked_until[identifier] = current_time + self.block_duration
@@ -437,6 +441,7 @@ class RateLimiterSecurity:
             reason: Reason for blocking
         """
         import time
+
         self.blocked_until[identifier] = time.time() + self.block_duration
         self.logger.warning(f"Manually blocked {identifier}: {reason}")
 
@@ -487,7 +492,7 @@ def get_rate_limiter_security(
     max_requests: int = 100,
     time_window: int = 60,
     block_duration: int = 300,
-    logger: Optional[Logger] = None
+    logger: Optional[Logger] = None,
 ) -> RateLimiterSecurity:
     """Get or create security rate limiter instance."""
     global _rate_limiter_security
@@ -496,6 +501,6 @@ def get_rate_limiter_security(
             max_requests=max_requests,
             time_window=time_window,
             block_duration=block_duration,
-            logger=logger
+            logger=logger,
         )
     return _rate_limiter_security

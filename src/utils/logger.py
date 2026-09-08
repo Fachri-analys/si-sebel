@@ -10,6 +10,7 @@ from typing import Optional
 
 try:
     from colorlog import ColoredFormatter
+
     COLORLOG_AVAILABLE = True
 except ImportError:
     COLORLOG_AVAILABLE = False
@@ -22,10 +23,7 @@ class Logger:
 
     @classmethod
     def get_logger(
-        cls,
-        name: str,
-        log_level: str = "INFO",
-        log_file: Optional[str] = None
+        cls, name: str, log_level: str = "INFO", log_file: Optional[str] = None
     ) -> logging.Logger:
         """
         Get or create a logger instance.
@@ -43,14 +41,14 @@ class Logger:
 
         logger = logging.getLogger(name)
         logger.setLevel(getattr(logging, log_level.upper()))
-        
+
         # Remove existing handlers to avoid duplicates
         logger.handlers.clear()
 
         # Console handler with colors
         console_handler = logging.StreamHandler(sys.stdout)
         console_handler.setLevel(logging.DEBUG)
-        
+
         if COLORLOG_AVAILABLE:
             console_format = ColoredFormatter(
                 "%(log_color)s%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -61,14 +59,14 @@ class Logger:
                     "WARNING": "yellow",
                     "ERROR": "red",
                     "CRITICAL": "red,bg_white",
-                }
+                },
             )
         else:
             console_format = logging.Formatter(
                 "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-                datefmt="%Y-%m-%d %H:%M:%S"
+                datefmt="%Y-%m-%d %H:%M:%S",
             )
-        
+
         console_handler.setFormatter(console_format)
         logger.addHandler(console_handler)
 
@@ -76,12 +74,12 @@ class Logger:
         if log_file:
             log_path = Path(log_file)
             log_path.parent.mkdir(parents=True, exist_ok=True)
-            
+
             file_handler = logging.FileHandler(log_file, encoding="utf-8")
             file_handler.setLevel(logging.DEBUG)
             file_format = logging.Formatter(
                 "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-                datefmt="%Y-%m-%d %H:%M:%S"
+                datefmt="%Y-%m-%d %H:%M:%S",
             )
             file_handler.setFormatter(file_format)
             logger.addHandler(file_handler)
@@ -89,10 +87,9 @@ class Logger:
         cls._loggers[name] = logger
         return logger
 
+
 def setup_application_logger(
-    app_name: str = "sisebel",
-    log_level: str = "INFO",
-    log_file: Optional[str] = None
+    app_name: str = "sisebel", log_level: str = "INFO", log_file: Optional[str] = None
 ) -> logging.Logger:
     """
     Setup main application logger.

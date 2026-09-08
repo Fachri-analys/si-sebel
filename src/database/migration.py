@@ -15,7 +15,7 @@ def run_migrations(db) -> None:
     Args:
         db: DatabaseConnection instance or sqlite3 connection
     """
-    conn = db.connect() if hasattr(db, 'connect') else db
+    conn = db.connect() if hasattr(db, "connect") else db
     cursor = conn.cursor()
 
     try:
@@ -67,29 +67,46 @@ def _migrate_columns(cursor) -> None:
         "contact",
         "facilities",
         "extracurricular",
-        "faq"
+        "faq",
     ]
     optional_columns = {
         "school_info": {
-            "category": "TEXT", "description": "TEXT",
+            "category": "TEXT",
+            "description": "TEXT",
         },
         "jurusan": {
-            "kode": "TEXT", "deskripsi": "TEXT", "syarat": "TEXT",
-            "prospek": "TEXT", "kuota": "INTEGER DEFAULT 0",
+            "kode": "TEXT",
+            "deskripsi": "TEXT",
+            "syarat": "TEXT",
+            "prospek": "TEXT",
+            "kuota": "INTEGER DEFAULT 0",
         },
         "ppdb_info": {"category": "TEXT", "tahun_ajaran": "TEXT"},
         "calendar": {"tahun_ajaran": "TEXT"},
         "contact": {"phone_number": "TEXT", "email": "TEXT", "description": "TEXT"},
-        "facilities": {"description": "TEXT", "location": "TEXT", "capacity": "INTEGER"},
-        "extracurricular": {
-            "description": "TEXT", "schedule": "TEXT",
-            "requirements": "TEXT", "contact_person": "TEXT",
+        "facilities": {
+            "description": "TEXT",
+            "location": "TEXT",
+            "capacity": "INTEGER",
         },
-        "faq": {"keywords": "TEXT", "category": "TEXT", "priority": "INTEGER DEFAULT 0", "hit_count": "INTEGER DEFAULT 0"},
+        "extracurricular": {
+            "description": "TEXT",
+            "schedule": "TEXT",
+            "requirements": "TEXT",
+            "contact_person": "TEXT",
+        },
+        "faq": {
+            "keywords": "TEXT",
+            "category": "TEXT",
+            "priority": "INTEGER DEFAULT 0",
+            "hit_count": "INTEGER DEFAULT 0",
+        },
     }
 
     for table in tables:
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table,))
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table,)
+        )
         if not cursor.fetchone():
             continue
 
@@ -101,21 +118,28 @@ def _migrate_columns(cursor) -> None:
                 existing_cols.append(column)
 
         if "is_active" not in existing_cols:
-            cursor.execute(f"ALTER TABLE {table} ADD COLUMN is_active BOOLEAN DEFAULT 1")
+            cursor.execute(
+                f"ALTER TABLE {table} ADD COLUMN is_active BOOLEAN DEFAULT 1"
+            )
 
         if "source" not in existing_cols:
-            cursor.execute(f"ALTER TABLE {table} ADD COLUMN source TEXT DEFAULT 'Belum terverifikasi'")
+            cursor.execute(
+                f"ALTER TABLE {table} ADD COLUMN source TEXT DEFAULT 'Belum terverifikasi'"
+            )
 
         if "verified_at" not in existing_cols:
             cursor.execute(f"ALTER TABLE {table} ADD COLUMN verified_at TIMESTAMP")
 
         if "updated_at" not in existing_cols:
             cursor.execute(f"ALTER TABLE {table} ADD COLUMN updated_at TIMESTAMP")
-            cursor.execute(f"UPDATE {table} SET updated_at = CURRENT_TIMESTAMP WHERE updated_at IS NULL")
+            cursor.execute(
+                f"UPDATE {table} SET updated_at = CURRENT_TIMESTAMP WHERE updated_at IS NULL"
+            )
         cursor.execute(f"UPDATE {table} SET is_active = 1 WHERE is_active IS NULL")
         cursor.execute(
             f"UPDATE {table} SET source = 'Belum terverifikasi' WHERE source IS NULL OR TRIM(source) = ''"
         )
+
 
 def _deduplicate_data(cursor) -> None:
     """
@@ -161,11 +185,23 @@ def _deduplicate_data(cursor) -> None:
 
 def _create_unique_indexes(cursor) -> None:
     """Create unique indexes to ensure ON CONFLICT statements match unique constraints."""
-    cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_calendar_unique ON calendar(event_name, tahun_ajaran)")
-    cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_contact_unique ON contact(name, role)")
+    cursor.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_calendar_unique ON calendar(event_name, tahun_ajaran)"
+    )
+    cursor.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_contact_unique ON contact(name, role)"
+    )
     cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_faq_unique ON faq(question)")
     cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_ppdb_key ON ppdb_info(key)")
-    cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_jurusan_nama ON jurusan(nama)")
-    cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_facilities_name ON facilities(name)")
-    cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_extracurricular_name ON extracurricular(name)")
-    cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_school_info_key ON school_info(key)")
+    cursor.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_jurusan_nama ON jurusan(nama)"
+    )
+    cursor.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_facilities_name ON facilities(name)"
+    )
+    cursor.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_extracurricular_name ON extracurricular(name)"
+    )
+    cursor.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_school_info_key ON school_info(key)"
+    )

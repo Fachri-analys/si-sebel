@@ -23,7 +23,7 @@ Latest local validation:
 | --- | --- |
 | Python compile check | Passed |
 | Automated tests | 9 passed |
-| Coverage gate | 32.17% (minimum 30%) |
+| Coverage gate | 32.05% (minimum 32%) |
 | Docker build | Not run locally; Docker unavailable |
 | WhatsApp provider E2E | Pending staging credentials |
 
@@ -82,7 +82,7 @@ python -m venv .venv
 # source .venv/bin/activate
 
 python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
+python -m pip install -r requirements.lock
 copy config\.env.example config\.env
 # Edit config/.env before starting the bot.
 python run_bot.py
@@ -107,6 +107,8 @@ Provider readiness still requires a successful staging connection.
 ```bash
 python -m compileall src scripts
 python -m pytest tests -q --cov=src --cov-report=term-missing
+python -m black --check src tests scripts
+python -m flake8 src tests scripts --ignore=C901,E402,E501,E704,F401,F811,W291,W503
 python scripts/healthcheck.py --database sisebel.db --auth-folder piwapp_auth
 ```
 

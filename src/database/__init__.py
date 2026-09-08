@@ -11,7 +11,7 @@ from .models import (
     ContactModel,
     FacilitiesModel,
     ExtracurricularModel,
-    PPDBInfoModel
+    PPDBInfoModel,
 )
 from .seeder import DatabaseSeeder, seed_database
 from .migration import run_migrations
@@ -32,5 +32,5 @@ __all__ = [
     "ExtracurricularModel",
     "PPDBInfoModel",
     "DatabaseSeeder",
-    "seed_database"
+    "seed_database",
 ]

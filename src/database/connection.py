@@ -10,8 +10,6 @@ from pathlib import Path
 from typing import Optional, List, Dict, Any
 from contextlib import contextmanager
 
-from .schema import ALL_SCHEMAS
-
 
 class DatabaseConnection:
     """Database connection manager for SQLite with retry logic."""
@@ -21,7 +19,7 @@ class DatabaseConnection:
         db_path: str,
         max_retries: int = 3,
         retry_delay: float = 1.0,
-        connection_timeout: int = 30
+        connection_timeout: int = 30,
     ):
         """
         Initialize database connection with retry logic.
@@ -34,7 +32,7 @@ class DatabaseConnection:
         """
         self.db_path = Path(db_path)
         # Create parent directory if it doesn't exist
-        if self.db_path.parent != Path('.'):
+        if self.db_path.parent != Path("."):
             self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.connection: Optional[sqlite3.Connection] = None
         self.max_retries = max_retries
@@ -57,7 +55,7 @@ class DatabaseConnection:
                     self.connection = sqlite3.connect(
                         str(self.db_path),
                         check_same_thread=False,
-                        timeout=self.connection_timeout
+                        timeout=self.connection_timeout,
                     )
                     # Enable foreign keys
                     self.connection.execute("PRAGMA foreign_keys = ON")
@@ -70,11 +68,15 @@ class DatabaseConnection:
                 return self.connection
             except sqlite3.Error as e:
                 if attempt < self.max_retries - 1:
-                    wait_time = self.retry_delay * (2 ** attempt)  # Exponential backoff
-                    print(f"Connection attempt {attempt + 1} failed, retrying in {wait_time}s...")
+                    wait_time = self.retry_delay * (2**attempt)  # Exponential backoff
+                    print(
+                        f"Connection attempt {attempt + 1} failed, retrying in {wait_time}s..."
+                    )
                     time.sleep(wait_time)
                 else:
-                    raise Exception(f"Failed to connect to database after {self.max_retries} attempts: {e}")
+                    raise Exception(
+                        f"Failed to connect to database after {self.max_retries} attempts: {e}"
+                    )
         return self.connection
 
     def close(self) -> None:
@@ -86,6 +88,7 @@ class DatabaseConnection:
     def initialize_database(self) -> None:
         """Create all tables and run migrations on the database."""
         from .migration import run_migrations
+
         run_migrations(self)
         print(f"Database initialized and migrated successfully at {self.db_path}")
 
@@ -114,7 +117,7 @@ class DatabaseConnection:
         params: Optional[tuple] = None,
         fetch: bool = False,
         fetch_all: bool = False,
-        retry_on_error: bool = True
+        retry_on_error: bool = True,
     ) -> Optional[List[Dict[str, Any]]]:
         """
         Execute a SQL query with retry logic.
@@ -133,7 +136,7 @@ class DatabaseConnection:
             fetch = True
 
         max_attempts = self.max_retries if retry_on_error else 1
-        
+
         for attempt in range(max_attempts):
             try:
                 with self.get_cursor() as cursor:
@@ -141,7 +144,7 @@ class DatabaseConnection:
                         cursor.execute(query, params)
                     else:
                         cursor.execute(query)
-                    
+
                     if fetch:
                         if fetch_all:
                             rows = cursor.fetchall()
@@ -150,11 +153,13 @@ class DatabaseConnection:
                             row = cursor.fetchone()
                             return dict(row) if row else None
                     return None
-                    
+
             except sqlite3.Error as e:
                 if attempt < max_attempts - 1:
-                    wait_time = self.retry_delay * (2 ** attempt)
-                    print(f"Query attempt {attempt + 1} failed: {e}, retrying in {wait_time}s...")
+                    wait_time = self.retry_delay * (2**attempt)
+                    print(
+                        f"Query attempt {attempt + 1} failed: {e}, retrying in {wait_time}s..."
+                    )
                     time.sleep(wait_time)
                 else:
                     raise Exception(f"Query failed after {max_attempts} attempts: {e}")
@@ -208,12 +213,12 @@ class DatabaseConnection:
         """
         backup_file = Path(backup_path)
         backup_file.parent.mkdir(parents=True, exist_ok=True)
-        
+
         # Backup using SQLite's backup API
         source = self.connect()
         temporary_path = backup_file.with_suffix(backup_file.suffix + ".tmp")
         dest = sqlite3.connect(str(temporary_path))
-        
+
         try:
             source.backup(dest)
             integrity = dest.execute("PRAGMA integrity_check").fetchone()
@@ -231,9 +236,11 @@ class DatabaseConnection:
     def health_check(self) -> bool:
         """Return whether SQLite is reachable and the migration table exists."""
         try:
-            result = self.connect().execute(
-                "SELECT 1 FROM schema_migrations LIMIT 1"
-            ).fetchone()
+            result = (
+                self.connect()
+                .execute("SELECT 1 FROM schema_migrations LIMIT 1")
+                .fetchone()
+            )
             return bool(result and result[0] == 1)
         except sqlite3.Error:
             return False

@@ -83,13 +83,13 @@ source venv/bin/activate
 ### 3. Install Dependencies
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.lock
 ```
 
 If you encounter any issues, try:
 ```bash
 pip install --upgrade pip
-pip install -r requirements.txt
+pip install -r requirements.lock
 ```
 
 ### 4. Setup Configuration
@@ -264,7 +264,7 @@ source venv-dev/bin/activate  # Linux/Mac
 
 2. Install development dependencies:
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.lock
 pip install pytest pytest-asyncio black flake8
 ```
 
@@ -313,7 +313,7 @@ rm -rf venv
 
 To update dependencies:
 ```bash
-pip install --upgrade -r requirements.txt
+pip install --upgrade -r requirements.lock
 ```
 
 ## Security Notes

@@ -9,6 +9,7 @@ from datetime import timedelta
 
 try:
     import redis
+
     REDIS_AVAILABLE = True
 except ImportError:
     REDIS_AVAILABLE = False
@@ -19,6 +20,7 @@ from .exceptions import SiSebelException
 
 class CacheError(SiSebelException):
     """Exception raised when cache operation fails."""
+
     pass
 
 
@@ -36,7 +38,7 @@ class CacheManager:
         password: str = None,
         ttl: int = 3600,
         enabled: bool = True,
-        logger: Optional[Logger] = None
+        logger: Optional[Logger] = None,
     ):
         """
         Initialize cache manager.
@@ -67,7 +69,7 @@ class CacheManager:
         self.ttl = ttl
         self.enabled = enabled
         self.logger = logger or Logger.get_logger("cache_manager")
-        
+
         self.redis_client: Optional[redis.Redis] = None
 
     def connect(self) -> bool:
@@ -90,14 +92,14 @@ class CacheManager:
                 decode_responses=False,  # Handle binary data
                 socket_connect_timeout=5,
                 socket_timeout=5,
-                retry_on_timeout=True
+                retry_on_timeout=True,
             )
-            
+
             # Test connection
             self.redis_client.ping()
             self.logger.info(f"Connected to Redis at {self.host}:{self.port}")
             return True
-            
+
         except Exception as e:
             self.logger.error(f"Failed to connect to Redis: {e}")
             self.enabled = False
@@ -126,7 +128,7 @@ class CacheManager:
         """
         try:
             # Try JSON first (more readable)
-            return json.dumps(value).encode('utf-8')
+            return json.dumps(value).encode("utf-8")
         except (TypeError, ValueError) as exc:
             raise CacheError("Cache values must be JSON serializable") from exc
 
@@ -142,7 +144,7 @@ class CacheManager:
         """
         try:
             # Try JSON first
-            return json.loads(value.decode('utf-8'))
+            return json.loads(value.decode("utf-8"))
         except (json.JSONDecodeError, UnicodeDecodeError) as exc:
             raise CacheError("Invalid cache payload") from exc
 
@@ -163,20 +165,15 @@ class CacheManager:
             cached_value = self.redis_client.get(key)
             if cached_value is None:
                 return None
-            
+
             self.logger.debug(f"Cache hit for key: {key}")
             return self._deserialize(cached_value)
-            
+
         except Exception as e:
             self.logger.error(f"Error getting from cache (key: {key}): {e}")
             return None
 
-    def set(
-        self,
-        key: str,
-        value: Any,
-        ttl: Optional[int] = None
-    ) -> bool:
+    def set(self, key: str, value: Any, ttl: Optional[int] = None) -> bool:
         """
         Set value in cache.
 
@@ -194,11 +191,11 @@ class CacheManager:
         try:
             serialized_value = self._serialize(value)
             cache_ttl = ttl if ttl is not None else self.ttl
-            
+
             self.redis_client.setex(key, cache_ttl, serialized_value)
             self.logger.debug(f"Cached value for key: {key} (TTL: {cache_ttl}s)")
             return True
-            
+
         except Exception as e:
             self.logger.error(f"Error setting cache (key: {key}): {e}")
             return False
@@ -220,7 +217,7 @@ class CacheManager:
             self.redis_client.delete(key)
             self.logger.debug(f"Deleted cache for key: {key}")
             return True
-            
+
         except Exception as e:
             self.logger.error(f"Error deleting cache (key: {key}): {e}")
             return False
@@ -245,7 +242,7 @@ class CacheManager:
                 self.logger.info(f"Deleted {deleted} keys matching pattern: {pattern}")
                 return deleted
             return 0
-            
+
         except Exception as e:
             self.logger.error(f"Error deleting pattern {pattern}: {e}")
             return 0
@@ -304,7 +301,9 @@ class CacheManager:
                 "connected_clients": info.get("connected_clients", 0),
                 "used_memory_human": info.get("used_memory_human", "N/A"),
                 "total_keys": self.redis_client.dbsize(),
-                "hit_rate": info.get("keyspace_hits", 0) / max(info.get("keyspace_hits", 0) + info.get("keyspace_misses", 0), 1) * 100
+                "hit_rate": info.get("keyspace_hits", 0)
+                / max(info.get("keyspace_hits", 0) + info.get("keyspace_misses", 0), 1)
+                * 100,
             }
         except Exception as e:
             self.logger.error(f"Error getting cache stats: {e}")
@@ -376,7 +375,7 @@ def get_cache_manager(
     password: str = None,
     ttl: int = 3600,
     enabled: bool = True,
-    logger: Optional[Logger] = None
+    logger: Optional[Logger] = None,
 ) -> CacheManager:
     """
     Get or create cache manager instance.
@@ -402,6 +401,6 @@ def get_cache_manager(
             password=password,
             ttl=ttl,
             enabled=enabled,
-            logger=logger
+            logger=logger,
         )
     return _cache_instance

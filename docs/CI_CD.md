@@ -143,7 +143,7 @@ pip install safety bandit
 
 **Run safety check:**
 ```bash
-safety check --file requirements.txt
+safety check --file requirements.lock
 ```
 
 **Run bandit:**
