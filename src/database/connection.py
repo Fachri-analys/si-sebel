@@ -5,6 +5,7 @@ Handles SQLite database connection and table creation with retry logic.
 
 import sqlite3
 import time
+import os
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 from contextlib import contextmanager
@@ -210,13 +211,54 @@ class DatabaseConnection:
         
         # Backup using SQLite's backup API
         source = self.connect()
-        dest = sqlite3.connect(backup_path)
+        temporary_path = backup_file.with_suffix(backup_file.suffix + ".tmp")
+        dest = sqlite3.connect(str(temporary_path))
         
         try:
             source.backup(dest)
-            print(f"Database backed up successfully to {backup_path}")
-        finally:
+            integrity = dest.execute("PRAGMA integrity_check").fetchone()
+            if not integrity or integrity[0] != "ok":
+                raise sqlite3.DatabaseError("Backup integrity check failed")
             dest.close()
+            os.replace(temporary_path, backup_file)
+            print(f"Database backed up successfully to {backup_file}")
+        finally:
+            if dest:
+                dest.close()
+            if temporary_path.exists():
+                temporary_path.unlink()
+
+    def health_check(self) -> bool:
+        """Return whether SQLite is reachable and the migration table exists."""
+        try:
+            result = self.connect().execute(
+                "SELECT 1 FROM schema_migrations LIMIT 1"
+            ).fetchone()
+            return bool(result and result[0] == 1)
+        except sqlite3.Error:
+            return False
+
+    def claim_message_id(self, message_id: str) -> bool:
+        """Atomically claim a message id for process-wide idempotency."""
+        if not message_id:
+            return True
+        with self.get_cursor() as cursor:
+            cursor.execute(
+                "INSERT OR IGNORE INTO processed_messages(message_id) VALUES (?)",
+                (message_id,),
+            )
+            return cursor.rowcount == 1
+
+    def prune_processed_messages(self, retention_days: int = 30) -> None:
+        """Remove expired idempotency keys."""
+        if retention_days < 1:
+            raise ValueError("retention_days must be positive")
+        with self.get_cursor() as cursor:
+            cursor.execute(
+                "DELETE FROM processed_messages "
+                "WHERE processed_at < datetime('now', ?)",
+                (f"-{retention_days} days",),
+            )
 
 
 # Global database instance

@@ -38,6 +38,25 @@ def test_faq_search_scores_matching_terms(tmp_path: Path):
     db.close()
 
 
+def test_message_id_claim_is_persistent_and_backup_is_valid(tmp_path: Path):
+    db = DatabaseConnection(str(tmp_path / "messages.db"))
+    db.initialize_database()
+
+    assert db.claim_message_id("message-1") is True
+    assert db.claim_message_id("message-1") is False
+
+    backup = tmp_path / "backups" / "messages.db"
+    db.backup_database(str(backup))
+    db.close()
+
+    backup_db = sqlite3.connect(backup)
+    assert backup_db.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
+    assert backup_db.execute(
+        "SELECT message_id FROM processed_messages"
+    ).fetchone()[0] == "message-1"
+    backup_db.close()
+
+
 def test_intent_router_prioritizes_specific_domains():
     processor = MessageProcessor.__new__(MessageProcessor)
     processor._init_intent_patterns()

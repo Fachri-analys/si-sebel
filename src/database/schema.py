@@ -189,6 +189,15 @@ CREATE INDEX IF NOT EXISTS idx_conversation_timestamp ON conversation_log(timest
 CREATE INDEX IF NOT EXISTS idx_conversation_intent ON conversation_log(intent_detected);
 """
 
+PROCESSED_MESSAGES_SCHEMA = """
+CREATE TABLE IF NOT EXISTS processed_messages (
+    message_id TEXT PRIMARY KEY,
+    processed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_processed_messages_at
+    ON processed_messages(processed_at);
+"""
+
 # Combined Schema
 ALL_SCHEMAS = [
     SCHOOL_INFO_SCHEMA,
@@ -200,6 +209,7 @@ ALL_SCHEMAS = [
     EXTRACURRICULAR_SCHEMA,
     FAQ_SCHEMA,
     CONVERSATION_LOG_SCHEMA,
+    PROCESSED_MESSAGES_SCHEMA,
 ]
 
 MIGRATION_SCHEMA = """

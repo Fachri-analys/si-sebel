@@ -6,7 +6,7 @@ Chatbot WhatsApp yang menyediakan informasi lengkap mengenai SMKN 11 Jakarta unt
 
 Database migration, intent routing, input validation, rate limiting, and WhatsApp
 message deduplication are covered by automated tests. The current local run has
-6 passing tests with 31% total coverage. This is not a production-ready claim:
+7 passing tests with 31% total coverage. This is not a production-ready claim:
 provider/webhook integration, operational observability, and broader business
 scenario coverage still require staging validation.
 
@@ -15,6 +15,20 @@ Run tests with:
 ```bash
 python -m pytest tests -q --cov=src --cov-report=term-missing
 ```
+
+## Database operations
+
+Run these commands from the project root:
+
+```bash
+python scripts/db_admin.py backup --path sisebel.db --output backups/sisebel.db
+python scripts/db_admin.py verify --path backups/sisebel.db
+python scripts/db_admin.py prune --path sisebel.db --retention-days 30
+```
+
+The backup command performs an SQLite integrity check and prints a SHA-256
+checksum. Store backups outside the application container and test restores
+before relying on them for recovery.
 
 ## 📋 Overview
 

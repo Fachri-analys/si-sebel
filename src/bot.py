@@ -153,10 +153,15 @@ class SiSebelBot:
             auth_folder.mkdir(parents=True, exist_ok=True)
 
             async def on_message_callback(message):
+                resources_acquired = False
                 try:
                     sender = message.get('from', '').split('@')[0]
                     body = message.get('body', '')
+                    message_id = message.get('id') or message.get('message_id')
                     if not body:
+                        return
+                    if message_id and not self.db.claim_message_id(str(message_id)):
+                        self.logger.info("Duplicate message ignored")
                         return
 
                     is_allowed, block_reason = self.rate_limiter_security.is_allowed(sender)
@@ -171,6 +176,7 @@ class SiSebelBot:
                     if not self.load_balancer.is_ready_for_request(sender):
                         self.logger.warning(f"Load balancer reject {sender}")
                         return
+                    resources_acquired = True
 
                     response = await self.message_processor.process_message(
                         phone_number=sender,
@@ -182,10 +188,11 @@ class SiSebelBot:
                             text=response,
                             delay=settings.bot_response_delay
                         )
-                    self.load_balancer.release_resources()
                 except Exception as e:
-                    self.logger.error(f"Callback error: {e}")
-                    self.load_balancer.release_resources()
+                    self.logger.error("Callback failed: %s", e)
+                finally:
+                    if resources_acquired:
+                        self.load_balancer.release_resources()
 
             self.whatsapp_handler = WhatsAppHandler(
                 auth_folder=str(auth_folder),
@@ -214,8 +221,13 @@ class SiSebelBot:
                 await self.whatsapp_handler.keep_alive()
             except Exception as e:
                 self.logger.warning(f"WhatsApp connection failed: {e}")
-                self.logger.info("Falling back to console mode...")
-                await self._run_console()
+                if settings.environment == "development":
+                    self.logger.info("Falling back to console mode...")
+                    await self._run_console()
+                else:
+                    raise WhatsAppConnectionError(
+                        "WhatsApp connection is required outside development"
+                    ) from e
 
         except Exception as e:
             self.logger.error(f"Start error: {e}")
