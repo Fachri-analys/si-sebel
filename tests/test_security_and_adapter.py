@@ -1,3 +1,5 @@
+import asyncio
+
 from handlers.whatsapp_handler import WhatsAppHandler
 from utils.security import InputValidator, RateLimiterSecurity
 
@@ -19,3 +21,15 @@ def test_rate_limiter_blocks_after_limit():
 def test_whatsapp_phone_normalization():
     handler = WhatsAppHandler.__new__(WhatsAppHandler)
     assert handler._format_phone("0812-3456-7890") == "6281234567890"
+
+
+def test_phone_formatting_normalizes_indonesian_numbers():
+    handler = WhatsAppHandler.__new__(WhatsAppHandler)
+    assert handler._format_phone("0812-3456-7890") == "6281234567890"
+    assert handler._format_phone("6281234567890") == "6281234567890"
+
+
+def test_send_message_returns_false_when_disconnected():
+    handler = WhatsAppHandler.__new__(WhatsAppHandler)
+    handler.is_connected = False
+    assert asyncio.run(handler.send_message("081234567890", "test")) is False

@@ -24,11 +24,15 @@ Run these commands from the project root:
 python scripts/db_admin.py backup --path sisebel.db --output backups/sisebel.db
 python scripts/db_admin.py verify --path backups/sisebel.db
 python scripts/db_admin.py prune --path sisebel.db --retention-days 30
+python scripts/healthcheck.py --database sisebel.db --auth-folder piwapp_auth
 ```
 
 The backup command performs an SQLite integrity check and prints a SHA-256
 checksum. Store backups outside the application container and test restores
 before relying on them for recovery.
+
+The container healthcheck validates the migrated database. Provider readiness
+still requires a staging WhatsApp connection and must be verified operationally.
 
 ## 📋 Overview
 

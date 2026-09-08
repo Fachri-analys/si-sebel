@@ -18,7 +18,7 @@ RUN mkdir -p /app/data /app/piwapp_auth \
 USER appuser
 STOPSIGNAL SIGTERM
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD python -c "import pathlib; raise SystemExit(0 if pathlib.Path('/app/run_bot.py').is_file() else 1)"
+  CMD python scripts/healthcheck.py --database /app/data/sisebel.db --auth-folder /app/piwapp_auth
 
 # Jalankan bot
 CMD ["python", "run_bot.py"]

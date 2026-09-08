@@ -36,13 +36,13 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install pytest pytest-asyncio pytest-cov black flake8 mypy
+        pip check
     
     - name: Lint with flake8
       run: |
         # Stop the build if there are Python syntax errors or undefined names
         flake8 src/ --count --select=E9,F63,F7,F82 --show-source --statistics
-        # Exit-zero treats all errors as warnings
-        flake8 src/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        flake8 src/ tests/ --count --max-complexity=10 --max-line-length=127 --statistics
     
     - name: Check code formatting with black
       run: |
@@ -63,7 +63,7 @@ jobs:
         file: ./coverage.xml
         flags: unittests
         name: codecov-umbrella
-        fail_ci_if_error: false
+        fail_ci_if_error: true
 
   security-scan:
     name: Security Scan

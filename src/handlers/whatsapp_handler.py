@@ -1,6 +1,4 @@
-"""
-WhatsApp handler - dengan debug import
-"""
+"""WhatsApp provider adapter for the chatbot business layer."""
 
 import asyncio
 from collections import deque
@@ -10,11 +8,10 @@ from typing import Callable, Optional
 # ========== IMPORT PIWAPP DENGAN DEBUG ==========
 try:
     import piwapp
+
     PIWAPP_AVAILABLE = True
-    print(f"✅ piwapp terdeteksi, versi: {piwapp.__version__}")
-except Exception as e:
+except ImportError:
     PIWAPP_AVAILABLE = False
-    print(f"❌ Gagal import piwapp: {type(e).__name__}: {e}")
 
 from utils.logger import Logger
 from utils.exceptions import WhatsAppConnectionError
@@ -26,7 +23,7 @@ class WhatsAppHandler:
         self,
         auth_folder: str = "./piwapp_auth",
         on_message_callback: Optional[Callable] = None,
-        logger: Optional[Logger] = None
+        logger: Optional[Logger] = None,
     ):
         if not PIWAPP_AVAILABLE:
             raise WhatsAppConnectionError("piwapp not installed.")
@@ -44,25 +41,25 @@ class WhatsAppHandler:
     async def connect(self) -> None:
         try:
             self.logger.info("Initializing WhatsApp client...")
-            ClientClass = getattr(piwapp, 'Client', None)
+            ClientClass = getattr(piwapp, "Client", None)
             if ClientClass is None:
                 raise WhatsAppConnectionError("Client class not found in piwapp")
 
             # Coba dari auth folder
-            if hasattr(piwapp, 'from_auth_folder'):
+            if hasattr(piwapp, "from_auth_folder"):
                 self.client = await piwapp.from_auth_folder(str(self.auth_folder))
             else:
                 self.client = ClientClass(
                     keys_path=str(self.auth_folder),
-                    db_path=str(self.auth_folder / "piwapp.db")
+                    db_path=str(self.auth_folder / "piwapp.db"),
                 )
 
             self._setup_event_handlers()
 
             self.logger.info("Connecting...")
-            if hasattr(self.client, 'start'):
+            if hasattr(self.client, "start"):
                 await self.client.start()
-            elif hasattr(self.client, 'connect'):
+            elif hasattr(self.client, "connect"):
                 await self.client.connect()
             else:
                 raise WhatsAppConnectionError("Client has no start/connect")
@@ -71,17 +68,18 @@ class WhatsAppHandler:
             self.logger.info("✓ WhatsApp connected!")
 
         except Exception as e:
-            self.logger.error(f"Connect error: {e}")
-            raise WhatsAppConnectionError(f"Connection failed: {e}")
+            self.logger.error("Connect error: %s", e)
+            raise WhatsAppConnectionError("WhatsApp connection failed") from e
 
     def _setup_event_handlers(self):
-        if hasattr(self.client, 'on'):
+        if hasattr(self.client, "on"):
+
             @self.client.on("connection.update")
             async def on_connection_update(update):
-                if hasattr(update, 'qr') and update.qr:
+                if hasattr(update, "qr") and update.qr:
                     self.logger.info("📱 QR Code:")
                     self.logger.info(update.qr)
-                if hasattr(update, 'connection'):
+                if hasattr(update, "connection"):
                     if update.connection == "open":
                         self.is_connected = True
                         self.logger.info("✓ WhatsApp open!")
@@ -103,10 +101,15 @@ class WhatsAppHandler:
                             return
                         self._processed_message_ids.add(message_id)
                         self._processed_message_order.append(message_id)
-                        if len(self._processed_message_ids) > self._processed_message_order.maxlen:
-                            self._processed_message_ids.discard(self._processed_message_order.popleft())
-                    sender = message.get('from', '').split('@')[0]
-                    body = message.get('body', '')
+                        if (
+                            len(self._processed_message_ids)
+                            > self._processed_message_order.maxlen
+                        ):
+                            self._processed_message_ids.discard(
+                                self._processed_message_order.popleft()
+                            )
+                    sender = message.get("from", "").split("@")[0]
+                    body = message.get("body", "")
                     sender_hash = InputValidator().hash_phone_number(sender)
                     self.logger.info(
                         "Incoming WhatsApp message sender_hash=%s body_length=%d",
@@ -116,22 +119,25 @@ class WhatsAppHandler:
                     if self.on_message_callback:
                         await self.on_message_callback(message)
                 except Exception as e:
-                    self.logger.error(f"Message error: {e}")
+                    self.logger.error("Message processing failed: %s", e)
+
         else:
             self.logger.warning("Client doesn't support 'on' events")
 
-    async def send_message(self, phone_number: str, text: str, delay: float = 1.0) -> bool:
+    async def send_message(
+        self, phone_number: str, text: str, delay: float = 1.0
+    ) -> bool:
         if not self.is_connected:
             return False
         try:
             phone = self._format_phone(phone_number)
             await asyncio.sleep(delay)
-            if hasattr(self.client, 'send_text'):
+            if hasattr(self.client, "send_text"):
                 await asyncio.wait_for(
                     self.client.send_text(to=phone, text=text),
                     timeout=30,
                 )
-            elif hasattr(self.client, 'send_message'):
+            elif hasattr(self.client, "send_message"):
                 await asyncio.wait_for(
                     self.client.send_message(to=phone, text=text),
                     timeout=30,
@@ -141,7 +147,7 @@ class WhatsAppHandler:
             self.logger.info(f"✅ Sent to {phone}")
             return True
         except Exception as e:
-            self.logger.error(f"Send failed: {e}")
+            self.logger.error("Send failed: %s", e)
             return False
 
     def _format_phone(self, phone: str) -> str:
@@ -154,9 +160,9 @@ class WhatsAppHandler:
 
     async def disconnect(self):
         if self.client:
-            if hasattr(self.client, 'disconnect'):
+            if hasattr(self.client, "disconnect"):
                 await self.client.disconnect()
-            elif hasattr(self.client, 'stop'):
+            elif hasattr(self.client, "stop"):
                 await self.client.stop()
             self.is_connected = False
 
@@ -170,7 +176,9 @@ class WhatsAppHandler:
 
 
 class WhatsAppManager:
-    def __init__(self, auth_folder="./piwapp_auth", on_message_callback=None, logger=None):
+    def __init__(
+        self, auth_folder="./piwapp_auth", on_message_callback=None, logger=None
+    ):
         self.handler = WhatsAppHandler(auth_folder, on_message_callback, logger)
 
     async def __aenter__(self):
