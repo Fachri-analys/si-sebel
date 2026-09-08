@@ -41,8 +41,8 @@ class InputValidator:
         r";\s*INSERT",  # SQL injection
         r";\s*UPDATE",  # SQL injection
         r"UNION\s+SELECT",  # SQL injection
-        r"--",  # SQL comment
-        r"/\*",  # SQL comment
+        r"--\s*(?:drop|delete|insert|update|select|alter|create|truncate)",  # SQL comment injection
+        r"/\*.*?\*/",  # SQL block comment
         r"\\x00",  # Null byte
         r"\\r\\n",  # CRLF injection
     ]
@@ -430,7 +430,36 @@ class RateLimiterSecurity:
 
         # Record request
         self.requests[identifier].append((current_time, False))
+
+        # Memory cleanup: purge stale records periodically
+        if len(self.requests) > 500:
+            self.cleanup_expired(current_time)
+
         return True, None
+
+    def cleanup_expired(self, current_time: Optional[float] = None) -> None:
+        """Purge inactive identifiers from memory to prevent memory leaks."""
+        import time
+
+        now = current_time if current_time is not None else time.time()
+        # Remove inactive request trackers
+        stale_ids = [
+            ident
+            for ident, reqs in self.requests.items()
+            if not reqs or all(now - ts >= self.time_window for ts, _ in reqs)
+        ]
+        for ident in stale_ids:
+            if ident not in self.blocked_until or now >= self.blocked_until[ident]:
+                self.requests.pop(ident, None)
+
+        # Remove expired blocks
+        expired_blocks = [
+            ident
+            for ident, blocked_time in self.blocked_until.items()
+            if now >= blocked_time
+        ]
+        for ident in expired_blocks:
+            self.blocked_until.pop(ident, None)
 
     def block_identifier(self, identifier: str, reason: str) -> None:
         """
@@ -504,3 +533,12 @@ def get_rate_limiter_security(
             logger=logger,
         )
     return _rate_limiter_security
+
+
+def reset_security_instances() -> None:
+    """Reset all cached security utility singleton instances."""
+    global _input_validator, _output_encoder, _security_logger, _rate_limiter_security
+    _input_validator = None
+    _output_encoder = None
+    _security_logger = None
+    _rate_limiter_security = None

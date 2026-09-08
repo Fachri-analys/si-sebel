@@ -268,13 +268,14 @@ class DatabaseConnection:
             )
 
 
-# Global database instance
+# Global database instances mapped by normalized path
+_db_instances: Dict[str, DatabaseConnection] = {}
 _db_instance: Optional[DatabaseConnection] = None
 
 
 def get_database(db_path: str) -> DatabaseConnection:
     """
-    Get or create database instance.
+    Get or create database instance for the specified path.
 
     Args:
         db_path: Path to SQLite database file
@@ -283,9 +284,23 @@ def get_database(db_path: str) -> DatabaseConnection:
         DatabaseConnection instance
     """
     global _db_instance
-    if _db_instance is None:
-        _db_instance = DatabaseConnection(db_path)
+    normalized_path = str(Path(db_path).resolve())
+    if normalized_path not in _db_instances:
+        _db_instances[normalized_path] = DatabaseConnection(db_path)
+    _db_instance = _db_instances[normalized_path]
     return _db_instance
+
+
+def reset_database_instances() -> None:
+    """Close and reset all cached database connections (useful for testing)."""
+    global _db_instance
+    for conn in list(_db_instances.values()):
+        try:
+            conn.close()
+        except Exception:
+            pass
+    _db_instances.clear()
+    _db_instance = None
 
 
 def initialize_database(db_path: str) -> DatabaseConnection:

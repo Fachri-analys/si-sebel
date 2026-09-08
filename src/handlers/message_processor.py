@@ -191,6 +191,8 @@ class MessageProcessor:
 
             # Generate response based on intent
             response = await self._generate_response(intent, cleaned_message)
+            if len(self.context) > 1000:
+                self.context.pop(next(iter(self.context)), None)
             self.context.setdefault(phone_number, {})["intent"] = intent
             if intent == IntentType.JURUSAN:
                 self.context[phone_number]["last_jurusan_query"] = cleaned_message
@@ -255,8 +257,19 @@ class MessageProcessor:
             "5": IntentType.CONTACT,
             "6": IntentType.FAQ,
         }
-        if message in menu_intent:
-            return menu_intent[message]
+        # Support single digits and common menu command formats (e.g., '1', '1.', 'no 1', 'menu 1')
+        normalized_choice = message.strip()
+        menu_number_match = re.match(
+            r"^(?:(?:no|nomor|menu|pilihan)\s*\.?\s*)?([1-6])[\.\)]?$",
+            normalized_choice,
+            re.IGNORECASE,
+        )
+        if menu_number_match:
+            choice = menu_number_match.group(1)
+            return menu_intent[choice]
+
+        if normalized_choice in menu_intent:
+            return menu_intent[normalized_choice]
 
         # Check for menu commands first
         for pattern in self.intent_patterns.get(IntentType.MENU, []):
@@ -380,13 +393,55 @@ class MessageProcessor:
             if not jurusan_list:
                 return "Maaf, informasi jurusan belum tersedia."
 
-            # If message contains specific jurusan name
+            # Comprehensive keyword and alias map for SMKN 11 Jakarta majors
+            jurusan_alias_map = {
+                "akl": {
+                    "akl",
+                    "akuntansi",
+                    "keuangan",
+                    "akuntansi dan keuangan lembaga",
+                    "pembukuan",
+                },
+                "mplb": {
+                    "mplb",
+                    "perkantoran",
+                    "manajemen perkantoran",
+                    "layanan bisnis",
+                    "administrasi perkantoran",
+                    "administrasi kantor",
+                    "otkp",
+                    "manajemen perkantoran dan layanan bisnis",
+                },
+                "br": {
+                    "br",
+                    "pemasaran",
+                    "bisnis ritel",
+                    "bisnis retail",
+                    "bdp",
+                    "ritel",
+                    "retail",
+                },
+            }
+
+            message_lower = message.lower()
+            message_words = set(re.findall(r"[a-z0-9]+", message_lower))
+
+            # If message matches a specific jurusan alias or keyword
             for jurusan in jurusan_list:
-                aliases = {
-                    str(jurusan.get("nama") or "").lower(),
-                    str(jurusan.get("kode") or "").lower(),
-                }
-                if any(alias and alias in message for alias in aliases):
+                kode = str(jurusan.get("kode") or "").lower()
+                nama = str(jurusan.get("nama") or "").lower()
+                aliases = set(jurusan_alias_map.get(kode, set()))
+                if nama:
+                    aliases.add(nama)
+                if kode:
+                    aliases.add(kode)
+
+                # Match if alias is substring in message OR any alias matches individual message word
+                matched = any(
+                    alias in message_lower for alias in aliases if len(alias) > 2
+                ) or any(w in aliases for w in message_words if len(w) >= 2)
+
+                if matched:
                     return self._format_jurusan_detail(jurusan)
 
             # Otherwise, show list
@@ -477,7 +532,15 @@ class MessageProcessor:
                 response += f"   📱 {contact['phone_number']}\n"
                 if contact["email"]:
                     response += f"   📧 {contact['email']}\n"
-                response += f"   📝 {contact['description']}\n\n"
+                if contact.get("description"):
+                    response += f"   📝 {contact['description']}\n"
+                response += "\n"
+
+            response += (
+                "🏢 *Fasilitas & Ekstrakurikuler:*\n"
+                "- Ketik *fasilitas* untuk melihat sarana & prasarana sekolah.\n"
+                "- Ketik *ekskul* untuk melihat kegiatan ekstrakurikuler."
+            )
 
             return response
 

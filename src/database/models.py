@@ -10,7 +10,7 @@ import re
 
 from .connection import DatabaseConnection
 from utils import CacheManager, CacheKey
-from utils.security import InputValidator
+from utils.security import get_input_validator
 
 
 class BaseModel:
@@ -37,7 +37,7 @@ class BaseModel:
         Returns:
             Hashed phone number
         """
-        return InputValidator().hash_phone_number(phone_number)
+        return get_input_validator().hash_phone_number(phone_number)
 
 
 class SchoolInfoModel(BaseModel):
@@ -221,6 +221,10 @@ class JurusanModel(BaseModel):
             )
             if self.cache:
                 self.cache.delete(CacheKey.jurusan())
+                self.cache.delete("jurusan:all:active_True")
+                self.cache.delete("jurusan:all:active_False")
+                if hasattr(self.cache, "delete_pattern"):
+                    self.cache.delete_pattern("jurusan:*")
             return True
         except Exception:
             return False
@@ -376,6 +380,11 @@ class FAQModel(BaseModel):
                     verified_at,
                 ),
             )
+            if self.cache:
+                self.cache.delete(CacheKey.faq())
+                self.cache.delete(f"faq:{question}")
+                if hasattr(self.cache, "delete_pattern"):
+                    self.cache.delete_pattern("faq:*")
             return True
         except Exception:
             return False
@@ -548,6 +557,10 @@ class CalendarModel(BaseModel):
                     verified_at,
                 ),
             )
+            if self.cache:
+                self.cache.delete(CacheKey.calendar(event_type, tahun_ajaran))
+                if hasattr(self.cache, "delete_pattern"):
+                    self.cache.delete_pattern("calendar:*")
             return True
         except Exception:
             return False
@@ -624,6 +637,12 @@ class ContactModel(BaseModel):
                     verified_at,
                 ),
             )
+            if self.cache:
+                self.cache.delete(CacheKey.contact())
+                if role:
+                    self.cache.delete(CacheKey.contact(role))
+                if hasattr(self.cache, "delete_pattern"):
+                    self.cache.delete_pattern("contact:*")
             return True
         except Exception:
             return False
@@ -688,6 +707,12 @@ class FacilitiesModel(BaseModel):
                     verified_at,
                 ),
             )
+            if self.cache:
+                self.cache.delete(CacheKey.facilities())
+                self.cache.delete("facilities:active_True")
+                self.cache.delete("facilities:active_False")
+                if hasattr(self.cache, "delete_pattern"):
+                    self.cache.delete_pattern("facilities:*")
             return True
         except Exception:
             return False
@@ -755,6 +780,12 @@ class ExtracurricularModel(BaseModel):
                     verified_at,
                 ),
             )
+            if self.cache:
+                self.cache.delete(CacheKey.extracurricular())
+                self.cache.delete("extracurricular:active_True")
+                self.cache.delete("extracurricular:active_False")
+                if hasattr(self.cache, "delete_pattern"):
+                    self.cache.delete_pattern("extracurricular:*")
             return True
         except Exception:
             return False
@@ -834,6 +865,13 @@ class PPDBInfoModel(BaseModel):
                     verified_at,
                 ),
             )
+            if self.cache:
+                self.cache.delete(CacheKey.ppdb_info(key, tahun_ajaran))
+                self.cache.delete(CacheKey.ppdb_info(key, None))
+                self.cache.delete(CacheKey.ppdb_info(None, tahun_ajaran))
+                self.cache.delete(CacheKey.ppdb_info())
+                if hasattr(self.cache, "delete_pattern"):
+                    self.cache.delete_pattern("ppdb:*")
             return True
         except Exception:
             return False

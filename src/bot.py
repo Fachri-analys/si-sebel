@@ -150,10 +150,13 @@ class SiSebelBot:
             async def on_message_callback(message):
                 resources_acquired = False
                 try:
-                    sender = message.get("from", "").split("@")[0]
+                    from_jid = message.get("from", "")
+                    if not from_jid or "@broadcast" in from_jid or "status" in from_jid:
+                        return
+                    sender = from_jid.split("@")[0]
                     body = message.get("body", "")
                     message_id = message.get("id") or message.get("message_id")
-                    if not body:
+                    if not body or not sender:
                         return
                     if message_id and not self.db.claim_message_id(str(message_id)):
                         self.logger.info("Duplicate message ignored")

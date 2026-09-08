@@ -1,8 +1,9 @@
-# Python
+﻿# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
+
+# Distribution / packaging
 .Python
 build/
 develop-eggs/
@@ -20,49 +21,44 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual Environment
+# Virtual Environments
+.venv/
 venv/
-env/
 ENV/
-env.bak/
-venv.bak/
+env/
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.DS_Store
+# WhatsApp Auth & Credentials
+piwapp_auth/
+*auth*/
+--version
 
-# Environment Variables
-config/.env
-.env
-.env.local
-
-# Database
+# Databases
 *.db
-*.sqlite
-*.sqlite3
+*.db-journal
+*.db-wal
+*.db.tmp
+sisebel.db
+backups/
+
+# Environment variables & secrets
+.env
+config/.env
+*.env.local
 
 # Logs
 logs/
 *.log
 
-# WhatsApp Authentication
-piwapp_auth/
-piwapp_qr.png
-
-# Testing
-.pytest_cache/
+# Unit test / coverage
 .coverage
+.coverage.*
+.pytest_cache/
 htmlcov/
+.tox/
 
-# Temporary files
-*.tmp
-*.bak
-*.cache
-
-# OS
-Thumbs.db
-.DS_Store
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

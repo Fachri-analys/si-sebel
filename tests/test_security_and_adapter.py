@@ -41,3 +41,43 @@ def test_metrics_snapshot_is_copy_and_rejects_invalid_values():
     assert registry.snapshot()["messages.received"] == 2
     with pytest.raises(ValueError):
         registry.increment("", 1)
+
+
+def test_input_validator_allows_normal_double_hyphen_text():
+    validator = InputValidator()
+    # Everyday Indonesian phrases with double hyphens or dashes should NOT be blocked
+    valid, sanitized = validator.validate_message("Halo pak -- mau tanya info jurusan")
+    assert valid
+    assert "info jurusan" in sanitized
+
+    valid2, sanitized2 = validator.validate_message("jadwal ujian - - terima kasih")
+    assert valid2
+
+    # Actual SQL injection comment with query must still be blocked
+    is_valid, reason = validator.validate_message("admin'-- DROP TABLE users")
+    assert not is_valid
+    assert "blocked" in reason.lower()
+
+
+def test_rate_limiter_memory_cleanup():
+    limiter = RateLimiterSecurity(max_requests=10, time_window=1, block_duration=2)
+    # Simulate past request
+    limiter.requests["old_user"] = [(100.0, False)]
+    limiter.blocked_until["expired_user"] = 100.0
+
+    limiter.cleanup_expired(current_time=200.0)
+
+    assert "old_user" not in limiter.requests
+    assert "expired_user" not in limiter.blocked_until
+
+
+def test_reset_security_instances():
+    from utils.security import get_input_validator, reset_security_instances
+
+    v1 = get_input_validator()
+    v2 = get_input_validator()
+    assert v1 is v2
+
+    reset_security_instances()
+    v3 = get_input_validator()
+    assert v3 is not v1
