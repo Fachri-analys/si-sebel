@@ -1,0 +1,100 @@
+name: CD - Deployment
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Run tests before deployment
+      run: |
+        pip install pytest pytest-asyncio pytest-cov
+        pytest tests/ -v --cov=src/ --cov-fail-under=30
+    
+    - name: Build deployment package
+      run: |
+        tar -czf sisebel-deploy.tar.gz \
+          src/ \
+          config/ \
+          Dockerfile \
+          docker-compose.yml \
+          requirements.txt \
+          run_bot.py \
+          README.md \
+          config/.env.example
+    
+    - name: Upload deployment artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: deployment-package
+        path: sisebel-deploy.tar.gz
+        retention-days: 7
+    
+    - name: Deploy to production over SSH
+      run: |
+        set -euo pipefail
+        test -n "${{ secrets.PROD_HOST }}"
+        test -n "${{ secrets.PROD_USER }}"
+        test -n "${{ secrets.PROD_PATH }}"
+        test -n "${{ secrets.PROD_SSH_KEY }}"
+        mkdir -p ~/.ssh
+        printf '%s\n' "${{ secrets.PROD_SSH_KEY }}" > ~/.ssh/id_ed25519
+        chmod 600 ~/.ssh/id_ed25519
+        ssh-keyscan -H "${{ secrets.PROD_HOST }}" >> ~/.ssh/known_hosts
+        sha256sum sisebel-deploy.tar.gz > sisebel-deploy.tar.gz.sha256
+        scp sisebel-deploy.tar.gz sisebel-deploy.tar.gz.sha256 \
+          "${{ secrets.PROD_USER }}@${{ secrets.PROD_HOST }}:${{ secrets.PROD_PATH }}/"
+        ssh "${{ secrets.PROD_USER }}@${{ secrets.PROD_HOST }}" \
+          "cd '${{ secrets.PROD_PATH }}' && sha256sum -c sisebel-deploy.tar.gz.sha256 && tar -xzf sisebel-deploy.tar.gz && docker compose up -d --build && docker compose ps"
+    
+    - name: Notify deployment status
+      if: always()
+      run: |
+        if [ "${{ job.status }}" == "success" ]; then
+          echo "✅ Deployment successful"
+        else
+          echo "❌ Deployment failed"
+        fi
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    environment: staging
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Deploy to staging
+      run: |
+        echo "Deploying to staging environment"
+        # Add your staging deployment commands here

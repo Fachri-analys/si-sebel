@@ -1,0 +1,254 @@
+"""
+Database connection and initialization for Si Sebel Bot.
+Handles SQLite database connection and table creation with retry logic.
+"""
+
+import sqlite3
+import time
+from pathlib import Path
+from typing import Optional, List, Dict, Any
+from contextlib import contextmanager
+
+from .schema import ALL_SCHEMAS
+
+
+class DatabaseConnection:
+    """Database connection manager for SQLite with retry logic."""
+
+    def __init__(
+        self,
+        db_path: str,
+        max_retries: int = 3,
+        retry_delay: float = 1.0,
+        connection_timeout: int = 30
+    ):
+        """
+        Initialize database connection with retry logic.
+
+        Args:
+            db_path: Path to SQLite database file
+            max_retries: Maximum number of connection retries
+            retry_delay: Initial delay between retries in seconds
+            connection_timeout: Connection timeout in seconds
+        """
+        self.db_path = Path(db_path)
+        # Create parent directory if it doesn't exist
+        if self.db_path.parent != Path('.'):
+            self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        self.connection: Optional[sqlite3.Connection] = None
+        self.max_retries = max_retries
+        self.retry_delay = retry_delay
+        self.connection_timeout = connection_timeout
+
+    def connect(self) -> sqlite3.Connection:
+        """
+        Establish database connection with retry logic.
+
+        Returns:
+            SQLite connection object
+
+        Raises:
+            Exception: If connection fails after all retries
+        """
+        for attempt in range(self.max_retries):
+            try:
+                if self.connection is None:
+                    self.connection = sqlite3.connect(
+                        str(self.db_path),
+                        check_same_thread=False,
+                        timeout=self.connection_timeout
+                    )
+                    # Enable foreign keys
+                    self.connection.execute("PRAGMA foreign_keys = ON")
+                    # Set row factory to return dictionaries
+                    self.connection.row_factory = sqlite3.Row
+                    # Set busy timeout for concurrent access
+                    self.connection.execute("PRAGMA busy_timeout = 5000")
+                    print(f"Database connection established: {self.db_path}")
+                    return self.connection
+                return self.connection
+            except sqlite3.Error as e:
+                if attempt < self.max_retries - 1:
+                    wait_time = self.retry_delay * (2 ** attempt)  # Exponential backoff
+                    print(f"Connection attempt {attempt + 1} failed, retrying in {wait_time}s...")
+                    time.sleep(wait_time)
+                else:
+                    raise Exception(f"Failed to connect to database after {self.max_retries} attempts: {e}")
+        return self.connection
+
+    def close(self) -> None:
+        """Close database connection."""
+        if self.connection:
+            self.connection.close()
+            self.connection = None
+
+    def initialize_database(self) -> None:
+        """Create all tables and run migrations on the database."""
+        from .migration import run_migrations
+        run_migrations(self)
+        print(f"Database initialized and migrated successfully at {self.db_path}")
+
+    @contextmanager
+    def get_cursor(self):
+        """
+        Context manager for database cursor.
+
+        Yields:
+            SQLite cursor object
+        """
+        connection = self.connect()
+        cursor = connection.cursor()
+        try:
+            yield cursor
+            connection.commit()
+        except Exception as e:
+            connection.rollback()
+            raise e
+        finally:
+            cursor.close()
+
+    def execute_query(
+        self,
+        query: str,
+        params: Optional[tuple] = None,
+        fetch: bool = False,
+        fetch_all: bool = False,
+        retry_on_error: bool = True
+    ) -> Optional[List[Dict[str, Any]]]:
+        """
+        Execute a SQL query with retry logic.
+
+        Args:
+            query: SQL query string
+            params: Query parameters
+            fetch: Whether to fetch results
+            fetch_all: Whether to fetch all results (if True) or one (if False)
+            retry_on_error: Whether to retry on database errors
+
+        Returns:
+            Query results if fetch or fetch_all is True, None otherwise
+        """
+        if fetch_all:
+            fetch = True
+
+        max_attempts = self.max_retries if retry_on_error else 1
+        
+        for attempt in range(max_attempts):
+            try:
+                with self.get_cursor() as cursor:
+                    if params:
+                        cursor.execute(query, params)
+                    else:
+                        cursor.execute(query)
+                    
+                    if fetch:
+                        if fetch_all:
+                            rows = cursor.fetchall()
+                            return [dict(row) for row in rows]
+                        else:
+                            row = cursor.fetchone()
+                            return dict(row) if row else None
+                    return None
+                    
+            except sqlite3.Error as e:
+                if attempt < max_attempts - 1:
+                    wait_time = self.retry_delay * (2 ** attempt)
+                    print(f"Query attempt {attempt + 1} failed: {e}, retrying in {wait_time}s...")
+                    time.sleep(wait_time)
+                else:
+                    raise Exception(f"Query failed after {max_attempts} attempts: {e}")
+
+    def execute_script(self, script: str) -> None:
+        """
+        Execute a SQL script (multiple statements).
+
+        Args:
+            script: SQL script string
+        """
+        with self.get_cursor() as cursor:
+            cursor.executescript(script)
+
+    def table_exists(self, table_name: str) -> bool:
+        """
+        Check if a table exists in the database.
+
+        Args:
+            table_name: Name of the table to check
+
+        Returns:
+            True if table exists, False otherwise
+        """
+        query = """
+            SELECT name FROM sqlite_master 
+            WHERE type='table' AND name=?
+        """
+        result = self.execute_query(query, (table_name,), fetch=True)
+        return result is not None
+
+    def get_table_info(self, table_name: str) -> List[Dict[str, Any]]:
+        """
+        Get information about a table's columns.
+
+        Args:
+            table_name: Name of the table
+
+        Returns:
+            List of column information dictionaries
+        """
+        query = f"PRAGMA table_info({table_name})"
+        return self.execute_query(query, fetch_all=True) or []
+
+    def backup_database(self, backup_path: str) -> None:
+        """
+        Create a backup of the database.
+
+        Args:
+            backup_path: Path for the backup file
+        """
+        backup_file = Path(backup_path)
+        backup_file.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Backup using SQLite's backup API
+        source = self.connect()
+        dest = sqlite3.connect(backup_path)
+        
+        try:
+            source.backup(dest)
+            print(f"Database backed up successfully to {backup_path}")
+        finally:
+            dest.close()
+
+
+# Global database instance
+_db_instance: Optional[DatabaseConnection] = None
+
+
+def get_database(db_path: str) -> DatabaseConnection:
+    """
+    Get or create database instance.
+
+    Args:
+        db_path: Path to SQLite database file
+
+    Returns:
+        DatabaseConnection instance
+    """
+    global _db_instance
+    if _db_instance is None:
+        _db_instance = DatabaseConnection(db_path)
+    return _db_instance
+
+
+def initialize_database(db_path: str) -> DatabaseConnection:
+    """
+    Initialize database with all tables.
+
+    Args:
+        db_path: Path to SQLite database file
+
+    Returns:
+        Initialized DatabaseConnection instance
+    """
+    db = get_database(db_path)
+    db.initialize_database()
+    return db

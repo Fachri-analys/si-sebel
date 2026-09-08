@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  bot:
+    build: .
+    container_name: sisebel-bot
+    environment:
+      - ENABLE_CACHE=false          # Nonaktifkan Redis agar tidak perlu install Redis
+      - PYTHONUNBUFFERED=1
+      - DATABASE_PATH=/app/data/sisebel.db
+    volumes:
+      - sisebel_data:/app/data
+      - piwapp_auth:/app/piwapp_auth
+    restart: unless-stopped
+
+volumes:
+  sisebel_data:
+  piwapp_auth:
