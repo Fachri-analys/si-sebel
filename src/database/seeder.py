@@ -6,7 +6,6 @@ Guaranteed to be idempotent (safe to run multiple times without duplicating or c
 """
 
 from typing import Optional
-from datetime import datetime
 from .connection import DatabaseConnection
 from .models import (
     SchoolInfoModel,
@@ -85,7 +84,8 @@ class DatabaseSeeder:
 
     def seed_school_info(self) -> None:
         """Seed school information based on official Kemendikbud Dapodik data."""
-        today = datetime.now().strftime("%Y-%m-%d")
+        # Verification must be recorded from an approved source, not seed time.
+        today = None
 
         school_data = [
             # General Info (Verified Dapodik Kemendikbud)
@@ -200,7 +200,7 @@ class DatabaseSeeder:
 
     def seed_jurusan(self) -> None:
         """Seed 3 official majors of SMKN 11 Jakarta (Bisnis & Manajemen)."""
-        today = datetime.now().strftime("%Y-%m-%d")
+        today = None
 
         # Deactivate all existing jurusan first (old fake data from previous seeder)
         self.db.execute_query("UPDATE jurusan SET is_active = 0")
@@ -253,7 +253,7 @@ class DatabaseSeeder:
 
     def seed_faq(self) -> None:
         """Seed FAQ data for SMKN 11 Jakarta."""
-        today = datetime.now().strftime("%Y-%m-%d")
+        today = None
 
         faq_data = [
             {
@@ -362,7 +362,7 @@ class DatabaseSeeder:
 
     def seed_calendar(self) -> None:
         """Seed academic calendar events for 2025/2026 academic year."""
-        today = datetime.now().strftime("%Y-%m-%d")
+        today = None
 
         calendar_data = [
             {
@@ -453,7 +453,7 @@ class DatabaseSeeder:
 
     def seed_contacts(self) -> None:
         """Seed contact directory."""
-        today = datetime.now().strftime("%Y-%m-%d")
+        today = None
 
         contact_data = [
             {
@@ -508,7 +508,7 @@ class DatabaseSeeder:
 
     def seed_facilities(self) -> None:
         """Seed school facilities."""
-        today = datetime.now().strftime("%Y-%m-%d")
+        today = None
 
         facilities_data = [
             {
@@ -590,7 +590,7 @@ class DatabaseSeeder:
 
     def seed_extracurricular(self) -> None:
         """Seed extracurricular activities."""
-        today = datetime.now().strftime("%Y-%m-%d")
+        today = None
 
         ekskul_data = [
             {
@@ -681,7 +681,7 @@ class DatabaseSeeder:
 
     def seed_ppdb_info(self) -> None:
         """Seed PPDB information based on official DKI Jakarta PPDB guidelines."""
-        today = datetime.now().strftime("%Y-%m-%d")
+        today = None
         tahun_ajaran = "2025/2026"
 
         ppdb_data = [
