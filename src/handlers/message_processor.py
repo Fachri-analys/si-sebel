@@ -99,29 +99,27 @@ class MessageProcessor:
         """Initialize regex patterns for intent detection."""
         self.intent_patterns = {
             IntentType.MENU: [
-                r"^(menu|help|\?|halo|hai|hi|selamat|pagi|siang|sore|malam)",
-                r"^menu$",
-                r"^help$",
-                r"^\?$",
+                r"^(menu|help|\?)$",
+                r"^(halo|hai|hi|hei|halo\s+(?:bot|min|admin|sisebel))$",
+                r"^(selamat\s+(?:pagi|siang|sore|malam)|pagi|siang|sore|malam)$",
             ],
             IntentType.SCHOOL_INFO: [
-                r"(info|informasi|tentang|sekolah|alamat|lokasi|visi|misi|sejarah)",
-                r"(jam|operasional|buka)",
-                r"(telepon|telp|hubungi|kontak)",
+                r"(info\s*sekolah|tentang\s*sekolah|alamat|lokasi|visi|misi|sejarah|akreditasi|npsn)",
+                r"(jam\s*operasional|jam\s*buka|jam\s*sekolah)",
             ],
             IntentType.JURUSAN: [
-                r"(jurusan|program|kompetensi|keahlian|prodi|major)",
-                r"(tkj|tkr|rpl|akuntansi|perkantoran)",
+                r"(jurusan|program\s*keahlian|kompetensi|keahlian|prodi|major)",
+                r"(akuntansi|perkantoran|pemasaran|bisnis\s*ritel|bisnis\s*retail|akl|mplb|br|bdp|otkp|rpl|tkj|tkr)",
             ],
             IntentType.PPDB: [
-                r"(ppdb|pendaftaran|daftar|masuk|masuk sekolah)",
+                r"(ppdb|pendaftaran|daftar|masuk\s*sekolah|registrasi)",
                 r"(syarat|persyaratan|dokumen|berkas)",
-                r"(biaya|spp|uang|bayar)",
-                r"(jadwal|kapan|waktu)",
+                r"(biaya|spp|uang\s*sekolah|bayar|gratis)",
+                r"(jadwal\s*daftar|kapan\s*daftar|jalur)",
             ],
             IntentType.CALENDAR: [
                 r"(kalender|jadwal|agenda|kegiatan|event)",
-                r"(ujian|exam|test)",
+                r"(ujian|exam|test|uts|uas|anbk)",
                 r"(libur|holiday|cuti)",
             ],
             IntentType.CONTACT: [
@@ -131,17 +129,14 @@ class MessageProcessor:
                 r"(humas|kesiswaan)",
             ],
             IntentType.FACILITIES: [
-                r"(fasilitas|sarana|prasarana|lab|laboratorium)",
-                r"(kantin|perpustakaan|masjid|lapangan)",
+                r"(fasilitas|sarana|prasarana|lab|laboratorium|gedung)",
+                r"(kantin|perpustakaan|masjid|lapangan|toilet)",
             ],
             IntentType.EXTRACURRICULAR: [
                 r"(ekskul|ekstrakurikuler|organisasi|osis)",
-                r"(pramuka|paskibra|basket|futsal|kir)",
+                r"(pramuka|paskibra|basket|futsal|kir|english\s*club|pmr)",
             ],
         }
-        self.intent_patterns[IntentType.FACILITIES].append(
-            r"(fasilitas|sarana|prasarana)"
-        )
 
     async def process_message(self, phone_number: str, message: str) -> str:
         """
@@ -271,12 +266,7 @@ class MessageProcessor:
         if normalized_choice in menu_intent:
             return menu_intent[normalized_choice]
 
-        # Check for menu commands first
-        for pattern in self.intent_patterns.get(IntentType.MENU, []):
-            if re.search(pattern, message, re.IGNORECASE):
-                return IntentType.MENU
-
-        # Specific domains must win over broad PPDB/school patterns.
+        # Specific domains must win over general greetings (e.g. 'pagi min mau tanya akuntansi')
         priority = (
             IntentType.CONTACT,
             IntentType.CALENDAR,
@@ -285,7 +275,6 @@ class MessageProcessor:
             IntentType.FACILITIES,
             IntentType.EXTRACURRICULAR,
             IntentType.SCHOOL_INFO,
-            IntentType.FAQ,
         )
         for intent in priority:
             if any(
@@ -293,11 +282,19 @@ class MessageProcessor:
                 for pattern in self.intent_patterns.get(intent, [])
             ):
                 return intent
+
+        # Check for menu commands or pure greetings if no specific domain was targeted
+        for pattern in self.intent_patterns.get(IntentType.MENU, []):
+            if re.search(pattern, message, re.IGNORECASE):
+                return IntentType.MENU
+
+        # Questions or general queries fallback to FAQ search
         if "?" in message or any(
             word in message.split()
-            for word in ("tanya", "berapa", "apakah", "bagaimana")
+            for word in ("tanya", "berapa", "apakah", "bagaimana", "kenapa", "faq")
         ):
             return IntentType.FAQ
+
         return IntentType.UNKNOWN
 
     async def _generate_response(self, intent: str, message: str) -> str:
